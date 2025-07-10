@@ -368,11 +368,19 @@ class EmotionRelationshipModule:
     
     def predict_emotion_transition(self, current_emotion_probs: torch.Tensor) -> Dict[str, float]:
         """预测情绪转换"""
+        # 确保输入张量形状正确
+        if len(current_emotion_probs.shape) > 1:
+            current_emotion_probs = current_emotion_probs.squeeze()
+        
         # 计算转换概率
         transition_probs = torch.matmul(self.transition_matrix, current_emotion_probs)
         
+        # 确保transition_probs是1维张量
+        if len(transition_probs.shape) > 1:
+            transition_probs = transition_probs.squeeze()
+        
         # 找到最可能的转换
-        top_transitions = torch.topk(transition_probs, k=3)
+        top_transitions = torch.topk(transition_probs, k=min(3, len(transition_probs)))
         
         transitions = {}
         for i, (prob, emotion_id) in enumerate(zip(top_transitions.values, top_transitions.indices)):
@@ -539,6 +547,18 @@ class FusionLayer(BaseLayer):
         confidence = fused_results['confidence'].item()
         intensity = fused_results['intensity'].detach().cpu().numpy()
         
+        # 确保emotion_probs是1维数组
+        if len(emotion_probs.shape) > 1:
+            emotion_probs = emotion_probs.flatten()
+        
+        # 确保intensity是1维数组并且与emotion_probs长度匹配
+        if len(intensity.shape) > 1:
+            intensity = intensity.flatten()
+        
+        # 如果intensity长度不匹配，使用emotion_probs作为强度的近似
+        if len(intensity) != len(emotion_probs):
+            intensity = emotion_probs.copy()
+        
         # 找到最可能的情绪
         top_emotion_id = np.argmax(emotion_probs)
         top_emotion_prob = emotion_probs[top_emotion_id]
@@ -554,7 +574,7 @@ class FusionLayer(BaseLayer):
             top_3_emotions.append({
                 'name': name,
                 'probability': float(emotion_probs[idx]),
-                'intensity': float(intensity[idx])
+                'intensity': float(intensity[idx]) if idx < len(intensity) else float(emotion_probs[idx])
             })
         
         # 预测情绪转换
@@ -566,7 +586,7 @@ class FusionLayer(BaseLayer):
             'primary_emotion': {
                 'name': emotion_name,
                 'probability': float(top_emotion_prob),
-                'intensity': float(intensity[top_emotion_id])
+                'intensity': float(intensity[top_emotion_id]) if top_emotion_id < len(intensity) else float(top_emotion_prob)
             },
             'top_3_emotions': top_3_emotions,
             'overall_confidence': confidence,
