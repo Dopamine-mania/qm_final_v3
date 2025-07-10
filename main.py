@@ -77,10 +77,17 @@ class QMFinal3System:
         """加载配置文件"""
         try:
             config_full_path = get_project_root() / self.config_path
+            logger.info(f"尝试加载配置文件: {config_full_path}")
+            if not config_full_path.exists():
+                logger.error(f"配置文件不存在: {config_full_path}")
+                raise FileNotFoundError(f"配置文件不存在: {config_full_path}")
+            
             self.config = ConfigLoader.load_yaml(str(config_full_path))
-            logger.info(f"配置加载成功: {config_full_path}")
+            logger.info(f"✅ 配置加载成功: {config_full_path}")
+            logger.info(f"配置文件包含层数: {len(self.config.get('layers', {}))}")
         except Exception as e:
-            logger.error(f"配置加载失败: {e}")
+            logger.error(f"❌ 配置加载失败: {e}")
+            logger.warning("使用默认配置（注意：默认配置可能不包含GPU优化）")
             # 使用默认配置
             self.config = self._get_default_config()
     
@@ -109,7 +116,7 @@ class QMFinal3System:
                     'extended_emotions': 18,
                     'fusion_strategy': 'confidence_weighted',
                     'enable_emotion_relationships': True,
-                    'use_gpu': fusion_config.get('use_gpu', True),
+                    'use_gpu': True,  # 启用GPU加速
                     'max_processing_time': 150.0
                 },
                 'mapping_layer': {
@@ -121,7 +128,7 @@ class QMFinal3System:
                     'kg_weight': 0.6,
                     'mlp_weight': 0.4,
                     'sleep_therapy_mode': True,
-                    'use_gpu': mapping_config.get('use_gpu', True),
+                    'use_gpu': True,  # 启用GPU加速
                     'max_processing_time': 100.0
                 },
                 'generation_layer': {
@@ -136,7 +143,7 @@ class QMFinal3System:
                     'therapy_optimized': True,
                     'iso_stage_aware': True,
                     'binaural_beats': True,
-                    'use_gpu': generation_config.get('use_gpu', True),
+                    'use_gpu': True,  # 启用GPU加速
                     'max_processing_time': 200.0
                 },
                 'rendering_layer': {
@@ -151,6 +158,7 @@ class QMFinal3System:
                     'audio_latency_ms': 50.0,  # 适中延迟
                     'video_latency_ms': 50.0,  # 适中延迟
                     'buffer_size_ms': 500.0,   # 500ms缓冲
+                    'use_gpu': True,  # 启用GPU加速
                     'max_processing_time': 16.7  # ~60fps
                 },
                 'therapy_layer': {
