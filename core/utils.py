@@ -120,6 +120,12 @@ class PerformanceMonitor:
     def get_all_stats(self) -> Dict[str, Dict[str, float]]:
         """获取所有性能统计"""
         return {name: self.get_stats(name) for name in self.metrics.keys()}
+    
+    def get_last_duration(self, name: str) -> float:
+        """获取最后一次的持续时间"""
+        if name not in self.metrics or not self.metrics[name]:
+            return 0.0
+        return self.metrics[name][-1]
 
 class ConfigLoader:
     """配置加载器"""
