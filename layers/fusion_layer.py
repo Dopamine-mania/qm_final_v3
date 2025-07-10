@@ -259,9 +259,10 @@ class MultiModalFusionModule:
 class EmotionRelationshipModule:
     """情绪关系建模模块"""
     
-    def __init__(self, emotion_config: Dict[str, Any]):
+    def __init__(self, emotion_config: Dict[str, Any], device: str = 'cpu'):
         self.emotion_config = emotion_config
         self.emotion_relationships = emotion_config.get('emotion_relationships', {})
+        self.device = device
         
         # 创建情绪ID映射
         self.emotion_id_map = {}
@@ -289,7 +290,7 @@ class EmotionRelationshipModule:
     def _build_mutual_exclusion_matrix(self) -> torch.Tensor:
         """构建互斥关系矩阵"""
         num_emotions = len(self.emotion_id_map)
-        matrix = torch.zeros(num_emotions, num_emotions)
+        matrix = torch.zeros(num_emotions, num_emotions, device=self.device)
         
         mutual_exclusive = self.emotion_relationships.get('mutually_exclusive', [])
         for emotion_pair in mutual_exclusive:
@@ -306,7 +307,7 @@ class EmotionRelationshipModule:
     def _build_synergy_matrix(self) -> torch.Tensor:
         """构建协同关系矩阵"""
         num_emotions = len(self.emotion_id_map)
-        matrix = torch.zeros(num_emotions, num_emotions)
+        matrix = torch.zeros(num_emotions, num_emotions, device=self.device)
         
         synergistic = self.emotion_relationships.get('synergistic', [])
         for emotion_pair in synergistic:
@@ -323,7 +324,7 @@ class EmotionRelationshipModule:
     def _build_transition_matrix(self) -> torch.Tensor:
         """构建转换关系矩阵"""
         num_emotions = len(self.emotion_id_map)
-        matrix = torch.zeros(num_emotions, num_emotions)
+        matrix = torch.zeros(num_emotions, num_emotions, device=self.device)
         
         transition_pairs = self.emotion_relationships.get('transition_pairs', [])
         for transition in transition_pairs:
@@ -415,7 +416,7 @@ class FusionLayer(BaseLayer):
         
         # 初始化情绪关系建模
         if config.enable_emotion_relationships:
-            self.relationship_module = EmotionRelationshipModule(self.emotion_config)
+            self.relationship_module = EmotionRelationshipModule(self.emotion_config, device=str(self.device))
         else:
             self.relationship_module = None
         
