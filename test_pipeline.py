@@ -63,15 +63,38 @@ async def test_full_pipeline():
             print(f"\n🧪 测试 {i}: {test_case['name']}")
             print(f"输入文本: {test_case['text']}")
             
-            # 创建测试数据
+            # 首先通过输入层添加文本
+            input_layer = system.layers[0]  # 输入层
+            input_layer.add_text_input(test_case['text'])
+            
+            # 创建测试数据 - 模拟输入层的输出格式
             test_data = LayerData(
-                layer_name='test_input',
+                layer_name='InputLayer',
                 timestamp=datetime.now(),
-                data={'text': test_case['text']},
+                data={
+                    'multimodal_data': {
+                        'text': {
+                            'text': test_case['text'],
+                            'features': {},
+                            'length': len(test_case['text']),
+                            'word_count': len(test_case['text'].split()),
+                            'encoding': 'utf-8'
+                        }
+                    },
+                    'data_quality': 1.0,
+                    'sync_quality': 1.0,
+                    'timestamp': datetime.now(),
+                    'enabled_modalities': {
+                        'text': True,
+                        'audio': False,
+                        'video': False
+                    }
+                },
                 metadata={
                     'source': 'pipeline_test',
                     'test_case': test_case['name'],
-                    'test_id': i
+                    'test_id': i,
+                    'processing_stage': 'input_layer_complete'
                 }
             )
             

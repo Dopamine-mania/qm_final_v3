@@ -572,8 +572,17 @@ class FusionLayer(BaseLayer):
             features = self._extract_features(input_data.data)
             if not features or len(features) == 0:
                 logger.warning(f"输入数据无有效模态，数据内容: {input_data.data}")
-                # 为了测试，创建默认文本特征
-                if 'text' in input_data.data:
+                # 检查是否有多模态数据结构
+                if 'multimodal_data' in input_data.data:
+                    multimodal = input_data.data['multimodal_data']
+                    if 'text' in multimodal and multimodal['text'].get('text'):
+                        # 直接处理文本数据
+                        text_content = multimodal['text']['text']
+                        features = {'text': self._extract_text_features(text_content)}
+                        logger.info(f"从多模态数据中提取文本特征: {text_content[:50]}...")
+                    else:
+                        raise ValueError("多模态数据中无有效文本")
+                elif 'text' in input_data.data:
                     features = {'text': torch.randn(1, 768).to(self.device)}
                     logger.info("使用默认文本特征进行处理")
                 else:
