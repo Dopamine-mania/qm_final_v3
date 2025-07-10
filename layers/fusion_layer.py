@@ -239,14 +239,21 @@ class MultiModalFusionModule:
     
     def fuse_modalities(self, modality_results: Dict[str, Dict[str, torch.Tensor]]) -> Dict[str, torch.Tensor]:
         """执行多模态融合"""
-        if self.config.fusion_strategy == "simple":
+        # 处理复杂配置格式
+        strategy = self.config.fusion_strategy
+        if isinstance(strategy, dict):
+            strategy_name = strategy.get('algorithm', 'confidence_weighted')
+        else:
+            strategy_name = strategy
+        
+        if strategy_name == "simple":
             return self.simple_fusion(modality_results)
-        elif self.config.fusion_strategy == "confidence_weighted":
+        elif strategy_name in ["confidence_weighted", "hybrid_attention_fusion"]:
             return self.confidence_weighted_fusion(modality_results)
-        elif self.config.fusion_strategy == "attention_based":
+        elif strategy_name == "attention_based":
             return self.attention_based_fusion(modality_results)
         else:
-            logger.warning(f"未知的融合策略: {self.config.fusion_strategy}，使用默认策略")
+            logger.warning(f"未知的融合策略: {strategy_name}，使用默认策略")
             return self.confidence_weighted_fusion(modality_results)
 
 class EmotionRelationshipModule:
@@ -336,12 +343,21 @@ class EmotionRelationshipModule:
         """应用情绪关系约束"""
         adjusted_probs = emotion_probs.clone()
         
-        # 应用协同关系增强
-        synergy_boost = torch.matmul(self.synergy_matrix, emotion_probs)
+        # 确保emotion_probs是正确的形状 (batch_size, num_emotions)
+        if len(emotion_probs.shape) == 1:
+            emotion_probs = emotion_probs.unsqueeze(0)
+        
+        # 对于矩阵乘法，我们需要转置emotion_probs为 (num_emotions, batch_size)
+        emotion_probs_t = emotion_probs.transpose(0, 1)  # (27, 1)
+        
+        # 应用协同关系增强: (27, 27) x (27, 1) = (27, 1)
+        synergy_boost = torch.matmul(self.synergy_matrix, emotion_probs_t)
+        synergy_boost = synergy_boost.transpose(0, 1)  # 转回 (1, 27)
         adjusted_probs += relationship_weight * synergy_boost
         
-        # 应用互斥关系抑制
-        exclusion_suppression = torch.matmul(self.mutual_exclusion_matrix, emotion_probs)
+        # 应用互斥关系抑制: (27, 27) x (27, 1) = (27, 1)
+        exclusion_suppression = torch.matmul(self.mutual_exclusion_matrix, emotion_probs_t)
+        exclusion_suppression = exclusion_suppression.transpose(0, 1)  # 转回 (1, 27)
         adjusted_probs -= relationship_weight * exclusion_suppression
         
         # 确保概率非负并重新归一化
