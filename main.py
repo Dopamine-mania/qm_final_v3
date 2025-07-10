@@ -260,6 +260,9 @@ class QMFinal3System:
         # 初始化生成层
         generation_config = layers_config.get('generation_layer', {})
         if generation_config.get('enabled', True):
+            # 读取嵌套的video_generation配置
+            video_gen_config = generation_config.get('video_generation', {})
+            
             # 处理参数兼容性和映射
             processed_generation_config = {
                 'layer_name': generation_config.get('layer_name', 'GenerationLayer'),
@@ -272,7 +275,9 @@ class QMFinal3System:
                 'audio_enabled': generation_config.get('audio_enabled', True),
                 'video_enabled': generation_config.get('video_enabled', True),
                 'audio_duration': generation_config.get('audio_duration', 30.0),
-                'video_duration': generation_config.get('video_duration', 30.0),
+                'video_duration': video_gen_config.get('duration', 30.0),  # 从video_generation读取
+                'video_fps': video_gen_config.get('fps', 30),              # 从video_generation读取
+                'video_resolution': video_gen_config.get('resolution', [1920, 1080]),  # 从video_generation读取
                 'therapy_optimized': generation_config.get('therapy_optimized', True),
                 'iso_stage_aware': generation_config.get('iso_stage_aware', True),
                 'binaural_beats': generation_config.get('binaural_beats', True),
