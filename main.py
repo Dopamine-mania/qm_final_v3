@@ -138,8 +138,10 @@ class QMFinal3System:
                     'content_type': 'both',
                     'audio_enabled': True,
                     'video_enabled': True,
-                    'audio_duration': 30.0,  # 30秒测试
-                    'video_duration': 30.0,  # 30秒测试
+                    'audio_duration': 5.0,   # 5秒实时生成
+                    'video_duration': 5.0,   # 5秒实时生成
+                    'video_fps': 15,          # 降低帧率
+                    'video_resolution': [480, 270],  # 降低分辨率
                     'therapy_optimized': True,
                     'iso_stage_aware': True,
                     'binaural_beats': True,
