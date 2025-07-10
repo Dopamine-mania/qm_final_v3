@@ -1,0 +1,337 @@
+# 六层架构配置文件
+# 基于Draft文档的设计要求，实现27维情绪分类和亚500ms实时性能
+
+# 系统全局配置
+system:
+  name: "心境流转 qm_final3"
+  version: "3.0.0"
+  architecture: "六层模块化架构"
+  target_latency_ms: 500
+  emotion_dimensions: 27
+  debug_mode: false
+  performance_monitoring: true
+
+# 六层架构配置
+layers:
+  # Layer 1: 输入层 - 多模态数据采集
+  input_layer:
+    enabled: true
+    layer_name: "InputLayer"
+    debug_mode: false
+    max_processing_time_ms: 50
+    
+    # 多模态输入支持
+    modalities:
+      text:
+        enabled: true
+        max_length: 1000
+        preprocessing:
+          - "tokenization"
+          - "normalization"
+          - "emotion_keyword_extraction"
+      
+      audio:
+        enabled: true
+        sample_rate: 16000
+        chunk_size: 1024
+        preprocessing:
+          - "noise_reduction"
+          - "feature_extraction"
+          - "prosody_analysis"
+      
+      video:
+        enabled: true
+        fps: 30
+        resolution: [640, 480]
+        preprocessing:
+          - "face_detection"
+          - "landmark_extraction"
+          - "expression_analysis"
+    
+    # 数据缓冲配置
+    buffer:
+      enabled: true
+      size: 100
+      timeout_ms: 1000
+
+  # Layer 2: 融合层 - 27维情绪识别与多模态融合
+  fusion_layer:
+    enabled: true
+    layer_name: "FusionLayer"
+    debug_mode: false
+    max_processing_time_ms: 150
+    
+    # 27维情绪空间配置
+    emotion_space:
+      dimensions: 27
+      base_emotions: 9  # 来自qm_final2的基础情绪
+      sleep_specific_emotions: 18  # 睡眠专用情绪扩展
+      
+      # 基础情绪分类（继承自qm_final2）
+      base_emotion_categories:
+        - "anger"      # 愤怒
+        - "fear"       # 恐惧/焦虑
+        - "disgust"    # 厌恶
+        - "sadness"    # 悲伤
+        - "amusement"  # 娱乐
+        - "joy"        # 喜悦
+        - "inspiration" # 灵感
+        - "tenderness" # 温柔
+        - "neutral"    # 中性
+      
+      # 睡眠专用情绪扩展（新增18维）
+      sleep_specific_categories:
+        - "rumination"              # 反刍思考
+        - "sleep_anxiety"           # 睡眠焦虑
+        - "physical_fatigue"        # 身体疲惫
+        - "mental_fatigue"          # 精神疲惫
+        - "hyperarousal"            # 过度觉醒
+        - "bedtime_worry"           # 就寝担忧
+        - "sleep_dread"             # 睡眠恐惧
+        - "racing_thoughts"         # 思维奔逸
+        - "somatic_tension"         # 躯体紧张
+        - "emotional_numbness"      # 情感麻木
+        - "restless_energy"         # 不安能量
+        - "sleep_frustration"       # 睡眠挫败
+        - "loneliness_at_bedtime"   # 就寝孤独
+        - "anticipatory_anxiety"    # 预期焦虑
+        - "sleep_perfectionism"     # 睡眠完美主义
+        - "bedroom_discomfort"      # 卧室不适
+        - "sleep_monitoring_anxiety" # 睡眠监控焦虑
+        - "morning_dread"           # 晨起恐惧
+    
+    # 多模态融合策略
+    fusion_strategy:
+      algorithm: "hybrid_attention_fusion"
+      
+      # 模态权重
+      modality_weights:
+        text: 0.4
+        audio: 0.35
+        video: 0.25
+      
+      # 融合配置
+      fusion_config:
+        attention_heads: 8
+        embedding_dim: 512
+        dropout: 0.1
+        confidence_threshold: 0.7
+        
+      # 置信度融合
+      confidence_fusion:
+        method: "weighted_average"
+        min_confidence: 0.3
+        adaptive_weighting: true
+
+  # Layer 3: 映射层 - KG-MLP混合映射
+  mapping_layer:
+    enabled: true
+    layer_name: "MappingLayer"
+    debug_mode: false
+    max_processing_time_ms: 100
+    
+    # KG-MLP混合架构
+    kg_mlp_config:
+      # 知识图谱配置
+      knowledge_graph:
+        enabled: true
+        kg_file: "data/sleep_therapy_kg.json"
+        embedding_dim: 256
+        relation_types: ["emotion_to_music", "therapy_stage", "iso_principle"]
+        
+      # MLP网络配置
+      mlp_network:
+        enabled: true
+        hidden_layers: [512, 256, 128]
+        activation: "relu"
+        dropout: 0.2
+        output_dim: 64  # 音乐参数维度
+        
+      # 混合融合配置
+      hybrid_fusion:
+        kg_weight: 0.6      # 知识图谱权重
+        mlp_weight: 0.4     # MLP权重
+        adaptive_fusion: true
+        fusion_method: "attention_weighted"
+    
+    # 音乐参数映射
+    music_parameters:
+      tempo:
+        range: [40, 120]
+        default: 80
+        emotion_sensitivity: 0.8
+      
+      key_signature:
+        major_keys: ["C", "G", "D", "A", "E", "B", "F#"]
+        minor_keys: ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "D#m"]
+        default: "C"
+      
+      dynamics:
+        range: ["pp", "p", "mp", "mf", "f", "ff"]
+        default: "p"
+        
+      texture:
+        types: ["monophonic", "homophonic", "polyphonic"]
+        default: "homophonic"
+        
+      timbre:
+        instruments: ["piano", "strings", "ambient_pads", "nature_sounds"]
+        default: ["piano", "strings"]
+
+  # Layer 4: 生成层 - 实时音视频生成
+  generation_layer:
+    enabled: true
+    layer_name: "GenerationLayer"
+    debug_mode: false
+    max_processing_time_ms: 150
+    
+    # 音乐生成配置
+    music_generation:
+      model: "musicgen_medium"
+      sample_rate: 32000
+      chunk_duration: 10  # 秒
+      overlap_duration: 2  # 秒
+      quality: "medium"
+      
+      # 实时优化
+      real_time_optimization:
+        enabled: true
+        pre_generation: true
+        chunk_caching: true
+        gpu_acceleration: true
+        
+    # 视频生成配置
+    video_generation:
+      model: "stable_diffusion_video"
+      resolution: [960, 540]
+      fps: 24
+      duration: 10  # 秒
+      
+      # 视觉模式
+      visual_modes:
+        - "breathing_guide"    # 呼吸引导
+        - "color_transition"   # 颜色过渡
+        - "nature_scenes"      # 自然场景
+        - "abstract_patterns"  # 抽象图案
+        
+    # 同步配置
+    audio_video_sync:
+      enabled: true
+      sync_tolerance_ms: 50
+      frame_buffer_size: 5
+      audio_buffer_size: 1024
+
+  # Layer 5: 渲染层 - 低延迟同步渲染
+  rendering_layer:
+    enabled: true
+    layer_name: "RenderingLayer"
+    debug_mode: false
+    max_processing_time_ms: 80
+    
+    # 渲染配置
+    rendering_config:
+      target_fps: 30
+      audio_latency_ms: 20
+      video_latency_ms: 33
+      buffer_size: 3
+      
+    # 质量自适应
+    adaptive_quality:
+      enabled: true
+      quality_levels: ["low", "medium", "high"]
+      auto_adjust: true
+      performance_threshold: 0.8
+      
+    # 硬件加速
+    hardware_acceleration:
+      gpu_enabled: true
+      cpu_fallback: true
+      memory_optimization: true
+
+  # Layer 6: 治疗层 - FSM驱动的三阶段治疗
+  therapy_layer:
+    enabled: true
+    layer_name: "TherapyLayer"
+    debug_mode: false
+    max_processing_time_ms: 50
+    
+    # 三阶段治疗配置（基于ISO原则）
+    iso_stages:
+      synchronization:
+        duration_ratio: 0.25
+        description: "同步化阶段 - 匹配当前情绪状态"
+        emotion_matching: true
+        gradual_transition: false
+        
+      guidance:
+        duration_ratio: 0.50
+        description: "引导化阶段 - 逐步过渡到平静"
+        emotion_transition: true
+        transition_speed: "moderate"
+        
+      consolidation:
+        duration_ratio: 0.25
+        description: "巩固化阶段 - 维持睡眠状态"
+        emotion_stabilization: true
+        maintenance_mode: true
+    
+    # 有限状态机配置
+    fsm_config:
+      states: ["idle", "synchronization", "guidance", "consolidation", "completed"]
+      initial_state: "idle"
+      transitions:
+        - {from: "idle", to: "synchronization", trigger: "start_therapy"}
+        - {from: "synchronization", to: "guidance", trigger: "sync_complete"}
+        - {from: "guidance", to: "consolidation", trigger: "guidance_complete"}
+        - {from: "consolidation", to: "completed", trigger: "therapy_complete"}
+        - {from: "any", to: "idle", trigger: "reset"}
+    
+    # 自适应调整
+    adaptive_therapy:
+      enabled: true
+      feedback_integration: true
+      real_time_adjustment: true
+      personalization: true
+
+# 性能配置
+performance:
+  # 全局性能要求
+  global_targets:
+    total_latency_ms: 500
+    throughput_fps: 30
+    memory_usage_mb: 8000
+    
+  # 各层性能分配
+  layer_performance:
+    input_layer: 50    # ms
+    fusion_layer: 150  # ms
+    mapping_layer: 100 # ms
+    generation_layer: 150 # ms
+    rendering_layer: 80  # ms
+    therapy_layer: 50   # ms
+    
+  # 性能监控
+  monitoring:
+    enabled: true
+    metrics: ["latency", "throughput", "memory", "gpu_usage"]
+    alert_thresholds:
+      latency_ms: 600
+      memory_mb: 10000
+      gpu_usage_percent: 95
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/qm_final3.log"
+  max_size_mb: 100
+  backup_count: 5
+  
+  # 各层日志级别
+  layer_levels:
+    InputLayer: "INFO"
+    FusionLayer: "INFO"
+    MappingLayer: "INFO"
+    GenerationLayer: "INFO"
+    RenderingLayer: "INFO"
+    TherapyLayer: "INFO"

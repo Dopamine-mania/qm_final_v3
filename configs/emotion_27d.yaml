@@ -1,0 +1,442 @@
+# 27维细粒度情绪分类配置
+# 基于Draft文档的创新设计，专门针对失眠前状态的情绪识别
+
+# 情绪空间配置
+emotion_space:
+  name: "27维睡眠治疗情绪空间"
+  total_dimensions: 27
+  base_dimensions: 9
+  extended_dimensions: 18
+  coordinate_system: "valence_arousal_extended"
+
+# 基础情绪分类（继承自qm_final2）
+base_emotions:
+  # 1. 愤怒类
+  anger:
+    id: 1
+    name: "愤怒"
+    valence: -0.8
+    arousal: 0.7
+    sleep_impact: "high_negative"
+    therapy_priority: "high"
+    color: "#ff4444"
+    
+  # 2. 恐惧/焦虑类
+  fear:
+    id: 2
+    name: "恐惧/焦虑"
+    valence: -0.6
+    arousal: 0.8
+    sleep_impact: "very_high_negative"
+    therapy_priority: "critical"
+    color: "#ff8800"
+    
+  # 3. 厌恶类
+  disgust:
+    id: 3
+    name: "厌恶"
+    valence: -0.7
+    arousal: 0.3
+    sleep_impact: "medium_negative"
+    therapy_priority: "medium"
+    color: "#88ff44"
+    
+  # 4. 悲伤类
+  sadness:
+    id: 4
+    name: "悲伤"
+    valence: -0.6
+    arousal: -0.2
+    sleep_impact: "high_negative"
+    therapy_priority: "high"
+    color: "#4488ff"
+    
+  # 5. 娱乐类
+  amusement:
+    id: 5
+    name: "娱乐"
+    valence: 0.6
+    arousal: 0.4
+    sleep_impact: "medium_positive"
+    therapy_priority: "low"
+    color: "#ff88cc"
+    
+  # 6. 喜悦类
+  joy:
+    id: 6
+    name: "喜悦"
+    valence: 0.8
+    arousal: 0.6
+    sleep_impact: "medium_positive"
+    therapy_priority: "low"
+    color: "#ffff44"
+    
+  # 7. 灵感类
+  inspiration:
+    id: 7
+    name: "灵感"
+    valence: 0.7
+    arousal: 0.5
+    sleep_impact: "low_positive"
+    therapy_priority: "low"
+    color: "#44ffff"
+    
+  # 8. 温柔类
+  tenderness:
+    id: 8
+    name: "温柔"
+    valence: 0.5
+    arousal: -0.3
+    sleep_impact: "high_positive"
+    therapy_priority: "beneficial"
+    color: "#ffccaa"
+    
+  # 9. 中性类
+  neutral:
+    id: 9
+    name: "中性"
+    valence: 0.0
+    arousal: 0.0
+    sleep_impact: "neutral"
+    therapy_priority: "low"
+    color: "#cccccc"
+
+# 睡眠专用情绪扩展（新增18维）
+sleep_specific_emotions:
+  # 10. 反刍思考
+  rumination:
+    id: 10
+    name: "反刍思考"
+    valence: -0.4
+    arousal: 0.3
+    sleep_impact: "very_high_negative"
+    therapy_priority: "critical"
+    description: "重复性的消极思维模式，难以停止"
+    symptoms: ["循环思维", "无法停止思考", "越想越焦虑"]
+    intervention: "认知重定向 + 放松技术"
+    color: "#cc6666"
+    
+  # 11. 睡眠焦虑
+  sleep_anxiety:
+    id: 11
+    name: "睡眠焦虑"
+    valence: -0.7
+    arousal: 0.6
+    sleep_impact: "very_high_negative"
+    therapy_priority: "critical"
+    description: "对睡眠本身的焦虑和恐惧"
+    symptoms: ["害怕失眠", "对睡眠的恐惧", "睡前紧张"]
+    intervention: "睡眠焦虑脱敏 + 渐进式放松"
+    color: "#ff6666"
+    
+  # 12. 身体疲惫
+  physical_fatigue:
+    id: 12
+    name: "身体疲惫"
+    valence: -0.3
+    arousal: -0.6
+    sleep_impact: "medium_positive"
+    therapy_priority: "low"
+    description: "身体感到疲惫但精神依然活跃"
+    symptoms: ["肌肉疲劳", "身体沉重", "体力透支"]
+    intervention: "身体放松 + 肌肉松弛技术"
+    color: "#9999cc"
+    
+  # 13. 精神疲惫
+  mental_fatigue:
+    id: 13
+    name: "精神疲惫"
+    valence: -0.2
+    arousal: -0.4
+    sleep_impact: "medium_positive"
+    therapy_priority: "low"
+    description: "精神疲惫但身体紧张"
+    symptoms: ["大脑疲劳", "注意力不集中", "思维迟缓"]
+    intervention: "认知放松 + 冥想技术"
+    color: "#cc99cc"
+    
+  # 14. 过度觉醒
+  hyperarousal:
+    id: 14
+    name: "过度觉醒"
+    valence: -0.1
+    arousal: 0.9
+    sleep_impact: "very_high_negative"
+    therapy_priority: "critical"
+    description: "身心过度激活，无法平静下来"
+    symptoms: ["心率加快", "肌肉紧张", "过度警觉"]
+    intervention: "深度放松 + 生物反馈"
+    color: "#ff9999"
+    
+  # 15. 就寝担忧
+  bedtime_worry:
+    id: 15
+    name: "就寝担忧"
+    valence: -0.5
+    arousal: 0.4
+    sleep_impact: "high_negative"
+    therapy_priority: "high"
+    description: "就寝时对各种事情的担忧"
+    symptoms: ["担心明天", "工作压力", "生活烦恼"]
+    intervention: "担忧时间设定 + 认知重构"
+    color: "#ffaa66"
+    
+  # 16. 睡眠恐惧
+  sleep_dread:
+    id: 16
+    name: "睡眠恐惧"
+    valence: -0.8
+    arousal: 0.5
+    sleep_impact: "very_high_negative"
+    therapy_priority: "critical"
+    description: "对睡眠过程的深度恐惧"
+    symptoms: ["害怕失去控制", "恐惧黑暗", "害怕噩梦"]
+    intervention: "恐惧脱敏 + 暴露疗法"
+    color: "#aa4444"
+    
+  # 17. 思维奔逸
+  racing_thoughts:
+    id: 17
+    name: "思维奔逸"
+    valence: -0.2
+    arousal: 0.8
+    sleep_impact: "very_high_negative"
+    therapy_priority: "critical"
+    description: "思维快速跳跃，无法集中"
+    symptoms: ["思维加速", "想法混乱", "无法专注"]
+    intervention: "正念冥想 + 思维减速技术"
+    color: "#ff6699"
+    
+  # 18. 躯体紧张
+  somatic_tension:
+    id: 18
+    name: "躯体紧张"
+    valence: -0.4
+    arousal: 0.2
+    sleep_impact: "high_negative"
+    therapy_priority: "high"
+    description: "身体各部位的紧张和不适"
+    symptoms: ["肌肉紧张", "关节僵硬", "身体不适"]
+    intervention: "渐进式肌肉放松 + 身体扫描"
+    color: "#cc8866"
+    
+  # 19. 情感麻木
+  emotional_numbness:
+    id: 19
+    name: "情感麻木"
+    valence: -0.1
+    arousal: -0.7
+    sleep_impact: "medium_negative"
+    therapy_priority: "medium"
+    description: "情感反应迟钝，感受不到情绪"
+    symptoms: ["情感平淡", "缺乏兴趣", "感觉空虚"]
+    intervention: "情感激活 + 感受体验练习"
+    color: "#999999"
+    
+  # 20. 不安能量
+  restless_energy:
+    id: 20
+    name: "不安能量"
+    valence: -0.3
+    arousal: 0.7
+    sleep_impact: "high_negative"
+    therapy_priority: "high"
+    description: "身体充满不安的能量，无法安静"
+    symptoms: ["坐立不安", "需要活动", "内在冲动"]
+    intervention: "能量释放 + 渐进式安静"
+    color: "#ffcc44"
+    
+  # 21. 睡眠挫败
+  sleep_frustration:
+    id: 21
+    name: "睡眠挫败"
+    valence: -0.6
+    arousal: 0.4
+    sleep_impact: "high_negative"
+    therapy_priority: "high"
+    description: "对无法入睡的挫败感"
+    symptoms: ["失眠挫折", "自我批评", "愤怒情绪"]
+    intervention: "自我接纳 + 挫折容忍训练"
+    color: "#cc4488"
+    
+  # 22. 就寝孤独
+  loneliness_at_bedtime:
+    id: 22
+    name: "就寝孤独"
+    valence: -0.5
+    arousal: -0.1
+    sleep_impact: "medium_negative"
+    therapy_priority: "medium"
+    description: "就寝时感到孤独和隔离"
+    symptoms: ["感觉孤单", "缺乏连接", "情感空虚"]
+    intervention: "连接感建立 + 安全感培养"
+    color: "#6699cc"
+    
+  # 23. 预期焦虑
+  anticipatory_anxiety:
+    id: 23
+    name: "预期焦虑"
+    valence: -0.6
+    arousal: 0.6
+    sleep_impact: "high_negative"
+    therapy_priority: "high"
+    description: "对未来事件的过度担忧"
+    symptoms: ["担心明天", "预期灾难", "过度准备"]
+    intervention: "现在时刻训练 + 不确定性接纳"
+    color: "#ff8866"
+    
+  # 24. 睡眠完美主义
+  sleep_perfectionism:
+    id: 24
+    name: "睡眠完美主义"
+    valence: -0.4
+    arousal: 0.3
+    sleep_impact: "medium_negative"
+    therapy_priority: "medium"
+    description: "对睡眠质量的过度完美要求"
+    symptoms: ["睡眠标准过高", "自我要求严格", "失眠自责"]
+    intervention: "期望调整 + 自我接纳训练"
+    color: "#ccaa44"
+    
+  # 25. 卧室不适
+  bedroom_discomfort:
+    id: 25
+    name: "卧室不适"
+    valence: -0.3
+    arousal: 0.2
+    sleep_impact: "medium_negative"
+    therapy_priority: "medium"
+    description: "对睡眠环境的不适感"
+    symptoms: ["环境敏感", "舒适度不足", "安全感缺失"]
+    intervention: "环境优化 + 适应训练"
+    color: "#aa8866"
+    
+  # 26. 睡眠监控焦虑
+  sleep_monitoring_anxiety:
+    id: 26
+    name: "睡眠监控焦虑"
+    valence: -0.5
+    arousal: 0.4
+    sleep_impact: "medium_negative"
+    therapy_priority: "medium"
+    description: "对睡眠数据和监控的过度关注"
+    symptoms: ["数据焦虑", "过度监控", "技术依赖"]
+    intervention: "监控脱敏 + 自然睡眠恢复"
+    color: "#88aacc"
+    
+  # 27. 晨起恐惧
+  morning_dread:
+    id: 27
+    name: "晨起恐惧"
+    valence: -0.7
+    arousal: 0.1
+    sleep_impact: "medium_negative"
+    therapy_priority: "medium"
+    description: "对第二天的恐惧和抗拒"
+    symptoms: ["不想起床", "逃避现实", "晨起焦虑"]
+    intervention: "晨起动机建立 + 积极期待培养"
+    color: "#6666aa"
+
+# 情绪关系映射
+emotion_relationships:
+  # 互斥关系
+  mutually_exclusive:
+    - ["joy", "sadness"]
+    - ["physical_fatigue", "hyperarousal"]
+    - ["emotional_numbness", "anxiety"]
+    
+  # 协同关系
+  synergistic:
+    - ["rumination", "sleep_anxiety"]
+    - ["bedtime_worry", "anticipatory_anxiety"]
+    - ["racing_thoughts", "restless_energy"]
+    - ["physical_fatigue", "mental_fatigue"]
+    
+  # 转换关系
+  transition_pairs:
+    - {from: "hyperarousal", to: "physical_fatigue", probability: 0.7}
+    - {from: "racing_thoughts", to: "mental_fatigue", probability: 0.6}
+    - {from: "sleep_anxiety", to: "sleep_dread", probability: 0.5}
+    - {from: "bedtime_worry", to: "rumination", probability: 0.8}
+
+# 治疗映射
+therapy_mapping:
+  # 高优先级情绪（需要立即干预）
+  critical_emotions:
+    - "sleep_anxiety"
+    - "sleep_dread"
+    - "hyperarousal"
+    - "racing_thoughts"
+    - "rumination"
+    
+  # 中优先级情绪（需要关注）
+  high_priority_emotions:
+    - "bedtime_worry"
+    - "somatic_tension"
+    - "sleep_frustration"
+    - "anticipatory_anxiety"
+    - "restless_energy"
+    
+  # 低优先级情绪（可以观察）
+  medium_priority_emotions:
+    - "loneliness_at_bedtime"
+    - "sleep_perfectionism"
+    - "bedroom_discomfort"
+    - "sleep_monitoring_anxiety"
+    - "morning_dread"
+    - "emotional_numbness"
+
+# 音乐治疗参数映射
+music_therapy_mapping:
+  # 高唤醒情绪的音乐策略
+  high_arousal_strategy:
+    emotions: ["hyperarousal", "racing_thoughts", "restless_energy"]
+    music_parameters:
+      initial_tempo: 100  # 匹配当前状态
+      target_tempo: 60    # 逐步降低
+      initial_key: "major"
+      target_key: "minor"
+      dynamics: "mf -> p -> pp"
+      texture: "complex -> simple"
+      
+  # 高焦虑情绪的音乐策略
+  high_anxiety_strategy:
+    emotions: ["sleep_anxiety", "sleep_dread", "anticipatory_anxiety"]
+    music_parameters:
+      initial_tempo: 80
+      target_tempo: 50
+      initial_key: "minor"
+      target_key: "major"
+      dynamics: "mp -> p -> pp"
+      texture: "homophonic"
+      
+  # 认知过度情绪的音乐策略
+  cognitive_overload_strategy:
+    emotions: ["rumination", "bedtime_worry", "sleep_perfectionism"]
+    music_parameters:
+      initial_tempo: 70
+      target_tempo: 45
+      initial_key: "neutral"
+      target_key: "major"
+      dynamics: "p -> pp"
+      texture: "simple"
+
+# 评估指标
+evaluation_metrics:
+  # 情绪识别准确率
+  recognition_accuracy:
+    target: 0.85
+    baseline: 0.80
+    measurement: "f1_score"
+    
+  # 治疗效果评估
+  therapy_effectiveness:
+    target: 0.75
+    baseline: 0.65
+    measurement: "emotion_transition_success_rate"
+    
+  # 实时性能
+  real_time_performance:
+    target_latency_ms: 150
+    max_latency_ms: 200
+    measurement: "average_processing_time"

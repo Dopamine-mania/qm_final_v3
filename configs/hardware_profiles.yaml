@@ -1,0 +1,350 @@
+# 《心境流转》硬件配置文件
+# 专为40-80GB GPU JupyterHub环境优化
+
+# 自动检测配置
+auto_detection:
+  enable: true
+  fallback_profile: "gpu_40gb"
+  detection_methods:
+    - "nvidia_smi"
+    - "torch_cuda_info"
+    - "memory_benchmark"
+
+# GPU配置文件
+profiles:
+  # 40GB GPU 配置 (主要目标)
+  gpu_40gb:
+    name: "NVIDIA A100 40GB"
+    memory:
+      total: "40GB"
+      available_for_models: "36GB"  # 留出4GB系统缓冲
+      emergency_reserve: "2GB"
+      
+    # 分阶段内存分配策略
+    memory_allocation_strategy:
+      sequential_processing: true
+      stage_based_allocation:
+        emotion_analysis:
+          max_memory: "8GB"
+          models_simultaneous: 2  # 文本+语音
+          optimization:
+            - "mixed_precision"
+            - "gradient_checkpointing"
+        
+        music_generation:
+          max_memory: "20GB"
+          models_simultaneous: 1
+          optimization:
+            - "cpu_offloading"
+            - "mixed_precision"
+            - "attention_slicing"
+        
+        video_generation:
+          max_memory: "30GB"
+          models_simultaneous: 1
+          optimization:
+            - "temporal_tiling"
+            - "fp8_quantization"
+            - "cpu_offloading"
+            - "sequential_decoding"
+    
+    # 模型选择
+    recommended_models:
+      text_emotion: "cardiffnlp/twitter-roberta-base-emotion"
+      speech_emotion: "speechbrain/emotion-recognition-wav2vec2-IEMOCAP"
+      music_generation: "facebook/musicgen-medium"
+      video_generation: "tencent/HunyuanVideo"
+    
+    # 优化策略
+    optimization_strategies:
+      global:
+        mixed_precision: true
+        compile_models: false  # JupyterHub环境可能不稳定
+        gradient_checkpointing: true
+        memory_efficient_attention: true
+        
+      memory_management:
+        auto_garbage_collection: true
+        gc_frequency: "after_each_stage"
+        cache_clearing: "aggressive"
+        model_unloading: "immediate"
+        
+      inference:
+        batch_size: 1
+        num_beams: 1
+        use_cache: false
+        low_cpu_mem_usage: true
+        
+    # 监控参数
+    monitoring:
+      memory_threshold_warning: 0.85  # 85%内存使用时警告
+      memory_threshold_critical: 0.95  # 95%时紧急清理
+      check_interval: 5  # 秒
+      auto_optimization: true
+  
+  # 80GB GPU 配置 (理想情况)
+  gpu_80gb:
+    name: "NVIDIA A100 80GB / H100"
+    memory:
+      total: "80GB"
+      available_for_models: "75GB"
+      emergency_reserve: "3GB"
+      
+    # 内存分配策略 (可并行处理)
+    memory_allocation_strategy:
+      sequential_processing: false  # 可以并行
+      parallel_stages: true
+      stage_based_allocation:
+        emotion_analysis:
+          max_memory: "12GB"
+          models_simultaneous: 2
+          optimization:
+            - "mixed_precision"
+        
+        music_generation:
+          max_memory: "30GB"
+          models_simultaneous: 1
+          optimization:
+            - "mixed_precision"
+        
+        video_generation:
+          max_memory: "40GB"
+          models_simultaneous: 1
+          optimization:
+            - "mixed_precision"
+            - "attention_optimization"
+    
+    # 模型选择 (更先进的模型)
+    recommended_models:
+      text_emotion: "j-hartmann/emotion-english-distilroberta-base"
+      speech_emotion: "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
+      music_generation: "facebook/musicgen-large"
+      video_generation: "tencent/HunyuanVideo"
+    
+    # 优化策略 (更侵略性)
+    optimization_strategies:
+      global:
+        mixed_precision: true
+        compile_models: true
+        gradient_checkpointing: false  # 不需要
+        memory_efficient_attention: true
+        
+      memory_management:
+        auto_garbage_collection: true
+        gc_frequency: "after_major_operations"
+        cache_clearing: "moderate"
+        model_unloading: "lazy"
+        
+      inference:
+        batch_size: 2  # 可以更大
+        num_beams: 2
+        use_cache: true
+        low_cpu_mem_usage: false
+        
+    # 监控参数 (更宽松)
+    monitoring:
+      memory_threshold_warning: 0.90
+      memory_threshold_critical: 0.98
+      check_interval: 10  # 秒
+      auto_optimization: false  # 手动控制
+  
+  # 24GB GPU 配置 (备用方案)
+  gpu_24gb:
+    name: "RTX 4090 / RTX 3090 24GB"
+    memory:
+      total: "24GB"
+      available_for_models: "20GB"
+      emergency_reserve: "2GB"
+      
+    # 内存分配策略 (极度优化)
+    memory_allocation_strategy:
+      sequential_processing: true
+      aggressive_optimization: true
+      stage_based_allocation:
+        emotion_analysis:
+          max_memory: "6GB"
+          models_simultaneous: 1  # 逐个处理
+          optimization:
+            - "mixed_precision"
+            - "gradient_checkpointing"
+            - "cpu_offloading"
+        
+        music_generation:
+          max_memory: "15GB"
+          models_simultaneous: 1
+          optimization:
+            - "cpu_offloading"
+            - "mixed_precision"
+            - "attention_slicing"
+            - "model_sharding"
+        
+        video_generation:
+          max_memory: "18GB"
+          models_simultaneous: 1
+          optimization:
+            - "temporal_tiling"
+            - "fp8_quantization"
+            - "cpu_offloading"
+            - "aggressive_compression"
+    
+    # 模型选择 (轻量级)
+    recommended_models:
+      text_emotion: "cardiffnlp/twitter-roberta-base-emotion"
+      speech_emotion: "speechbrain/emotion-recognition-wav2vec2-IEMOCAP"
+      music_generation: "facebook/musicgen-small"
+      video_generation: "THUDM/CogVideoX-2b"
+    
+    # 优化策略 (极度优化)
+    optimization_strategies:
+      global:
+        mixed_precision: true
+        compile_models: false
+        gradient_checkpointing: true
+        memory_efficient_attention: true
+        
+      memory_management:
+        auto_garbage_collection: true
+        gc_frequency: "after_each_operation"
+        cache_clearing: "aggressive"
+        model_unloading: "immediate"
+        force_cleanup: true
+        
+      inference:
+        batch_size: 1
+        num_beams: 1
+        use_cache: false
+        low_cpu_mem_usage: true
+        offload_to_cpu: true
+        
+    # 监控参数 (非常严格)
+    monitoring:
+      memory_threshold_warning: 0.80
+      memory_threshold_critical: 0.90
+      check_interval: 3  # 秒
+      auto_optimization: true
+      emergency_cleanup: true
+
+# JupyterHub 特定优化
+jupyter_optimizations:
+  # Notebook 环境优化
+  notebook_specific:
+    kernel_restart_prevention: true
+    memory_leak_detection: true
+    auto_cleanup_between_cells: true
+    widget_memory_management: true
+    
+  # 显示优化
+  display_optimizations:
+    progress_bars: true
+    memory_usage_display: true
+    generation_preview: false  # 节省内存
+    intermediate_results: false
+    
+  # 错误处理
+  error_handling:
+    auto_recovery: true
+    checkpoint_saving: true
+    graceful_degradation: true
+    fallback_models: true
+
+# 性能基准测试
+benchmarking:
+  # 内存基准测试
+  memory_benchmark:
+    enable: true
+    test_models:
+      - "text_emotion_model"
+      - "speech_emotion_model"
+      - "music_generation_model"
+    memory_stress_test: true
+    
+  # 性能基准测试
+  performance_benchmark:
+    enable: true
+    metrics:
+      - "inference_time"
+      - "memory_usage"
+      - "gpu_utilization"
+      - "generation_quality"
+    
+  # 自动调优
+  auto_tuning:
+    enable: true
+    tune_batch_size: true
+    tune_precision: true
+    tune_optimization_flags: true
+
+# 监控和警告
+monitoring:
+  # GPU 监控
+  gpu_monitoring:
+    enable: true
+    metrics:
+      - "memory_usage"
+      - "gpu_utilization"
+      - "temperature"
+      - "power_consumption"
+    alert_thresholds:
+      memory_warning: 0.85
+      memory_critical: 0.95
+      temperature_warning: 80  # 摄氏度
+      temperature_critical: 85
+    
+  # 系统监控
+  system_monitoring:
+    enable: true
+    metrics:
+      - "cpu_usage"
+      - "ram_usage"
+      - "disk_usage"
+      - "network_io"
+    
+  # 日志记录
+  logging:
+    level: "INFO"
+    file_output: true
+    console_output: true
+    performance_logging: true
+    error_tracking: true
+
+# 紧急情况处理
+emergency_protocols:
+  # 内存不足处理
+  out_of_memory:
+    auto_cleanup: true
+    model_downgrade: true
+    graceful_shutdown: true
+    save_progress: true
+    
+  # 性能降级
+  performance_degradation:
+    reduce_quality: true
+    enable_all_optimizations: true
+    switch_to_lightweight_models: true
+    
+  # 系统恢复
+  system_recovery:
+    auto_restart: false  # JupyterHub环境不建议
+    checkpoint_restore: true
+    error_reporting: true
+    user_notification: true
+
+# 学术研究特定配置
+research_configurations:
+  # 实验可重现性
+  reproducibility:
+    fixed_seeds: true
+    deterministic_algorithms: true
+    environment_logging: true
+    
+  # 数据采集
+  data_collection:
+    performance_metrics: true
+    quality_metrics: true
+    user_interaction_logs: false  # 隐私保护
+    
+  # 对比研究
+  comparative_analysis:
+    enable_model_comparison: true
+    benchmark_against_baselines: true
+    statistical_significance_testing: true

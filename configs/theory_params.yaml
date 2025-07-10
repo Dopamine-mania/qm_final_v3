@@ -1,0 +1,149 @@
+# 《心境流转》理论参数配置
+# 基于2024年最新学术研究的科学参数
+
+# ISO原则配置 (基于2024年音乐疗愈研究)
+iso_principle:
+  # 三阶段比例分配
+  stage_durations:
+    synchronization: 0.25    # 同频阶段 (25%)
+    guidance: 0.50          # 引导阶段 (50%)
+    consolidation: 0.25     # 巩固阶段 (25%)
+  
+  # 情绪转换参数
+  transition_params:
+    smoothness_factor: 0.8   # 过渡平滑度 (0-1)
+    step_size: 0.05         # 情绪变化步长
+    adaptation_rate: 0.7    # 适应率
+  
+  # 睡前目标状态 (Valence-Arousal坐标)
+  target_sleep_state:
+    valence: 0.2           # 轻微积极 (-1 到 1)
+    arousal: -0.6          # 低唤醒 (-1 到 1)
+    confidence: 0.9        # 置信度阈值
+
+# Valence-Arousal情绪模型 (基于学术研究)
+valence_arousal:
+  # 情绪空间划分
+  emotion_regions:
+    high_valence_high_arousal: [0.5, 1.0, 0.5, 1.0]   # [v_min, v_max, a_min, a_max]
+    high_valence_low_arousal: [0.5, 1.0, -1.0, 0.0]
+    low_valence_high_arousal: [-1.0, 0.0, 0.5, 1.0]
+    low_valence_low_arousal: [-1.0, 0.0, -1.0, 0.0]
+  
+  # 情绪权重融合
+  fusion_weights:
+    text_emotion: 0.6       # 文本情绪权重
+    speech_emotion: 0.4     # 语音情绪权重
+    confidence_threshold: 0.7  # 融合置信度阈值
+
+# 睡眠生理学参数 (基于睡眠研究文献)
+sleep_physiology:
+  # 脑波优化
+  brainwave_targets:
+    alpha_range: [8, 12]     # α波频率范围 (Hz)
+    theta_range: [4, 8]      # θ波频率范围 (Hz)
+    delta_range: [0.5, 4]    # δ波频率范围 (Hz)
+  
+  # 心率同步 (基于生理学研究)
+  heart_rate_sync:
+    resting_bpm_range: [50, 60]    # 静息心率范围
+    transition_bpm: [70, 90]       # 过渡心率
+    sync_tolerance: 5              # 同步容差
+  
+  # 副交感神经激活
+  parasympathetic_activation:
+    enable: true
+    low_frequency_emphasis: true   # 强调低频
+    harmonic_resonance: true       # 谐波共鸣
+
+# 音乐心理学参数 (基于学术研究)
+music_psychology:
+  # BPM与情绪映射 (基于2024年EEG研究)
+  tempo_emotion_mapping:
+    relaxation: [40, 60]     # 放松状态 (BPM)
+    transition: [60, 90]     # 过渡状态
+    low_activation: [90, 106] # 低唤醒状态
+    medium_activation: [106, 120] # 中唤醒状态
+  
+  # 调性情绪映射 (基于音乐心理学)
+  key_emotion_mapping:
+    positive_major: ["C_major", "G_major", "D_major", "A_major"]
+    neutral_major: ["F_major", "Bb_major"]
+    contemplative_minor: ["A_minor", "E_minor", "B_minor"]
+    deep_minor: ["F#_minor", "C#_minor", "Bb_minor"]
+  
+  # 音乐特征参数
+  musical_features:
+    dynamics:
+      sleep_induction: "pp"    # 极弱 (pianissimo)
+      transition: "p"         # 弱 (piano)
+      comfort: "mp"           # 中弱 (mezzo-piano)
+    
+    texture:
+      preference: "homophonic"  # 主调音乐
+      complexity: "simple"     # 简单织体
+      layering: "minimal"      # 最小化层次
+    
+    timbre:
+      preferred_instruments: ["piano", "strings", "ambient_pads", "nature_sounds"]
+      avoid_instruments: ["percussion", "brass", "electric_guitar"]
+
+# 音画同步参数
+audio_visual_sync:
+  # 视觉特征映射
+  visual_mapping:
+    color_palettes:
+      relaxing: ["deep_blue", "soft_purple", "gentle_green"]
+      transitional: ["warm_orange", "soft_yellow", "light_blue"]
+      contemplative: ["muted_grey", "soft_beige", "pale_lavender"]
+    
+    movement_patterns:
+      slow_drift: 0.1         # 缓慢漂移速度
+      gentle_fade: 0.05       # 柔和淡入淡出
+      minimal_transition: 0.02 # 最小过渡
+  
+  # 同步算法参数
+  sync_algorithm:
+    beat_sensitivity: 0.7    # 节拍敏感度
+    harmony_weight: 0.8      # 和声权重
+    tempo_influence: 0.9     # 节奏影响度
+
+# 个性化参数
+personalization:
+  # 情绪 DNA 提取
+  emotion_dna:
+    extract_keywords: true    # 提取关键词
+    analyze_sentiment_depth: true  # 分析情感深度
+    voice_characteristics: true    # 分析语音特征
+  
+  # 适应性学习
+  adaptive_learning:
+    enable: false            # 暂时禁用（为了系统稳定性）
+    feedback_weight: 0.3     # 反馈权重
+    learning_rate: 0.1       # 学习率
+
+# 模式配置
+modes:
+  demo_mode:
+    total_duration: 240      # 4分钟 (秒)
+    stage_transitions: "accelerated"  # 加速过渡
+    emphasis: "key_features"  # 强调关键特征
+  
+  experience_mode:
+    total_duration: 1200     # 20分钟 (秒)
+    stage_transitions: "natural"     # 自然过渡
+    emphasis: "full_journey"  # 完整体验
+
+# 质量保证参数
+quality_assurance:
+  # 生成质量控制
+  generation_quality:
+    music_coherence_threshold: 0.85   # 音乐连贯性阈值
+    visual_harmony_threshold: 0.80    # 视觉和谐性阈值
+    emotion_accuracy_threshold: 0.90  # 情绪准确性阈值
+  
+  # 安全参数
+  safety_params:
+    max_volume_level: 0.7     # 最大音量级别
+    avoid_sudden_changes: true # 避免突然变化
+    gentle_transitions_only: true # 仅使用柔和过渡

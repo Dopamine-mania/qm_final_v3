@@ -1,0 +1,442 @@
+# 《心境流转》评估指标配置
+# 基于学术标准的评估体系
+
+# 情绪识别评估指标
+emotion_recognition_metrics:
+  # 文本情绪识别
+  text_emotion:
+    accuracy_metrics:
+      overall_accuracy:
+        target: 0.95
+        minimum: 0.90
+        weight: 0.3
+      
+      valence_accuracy:
+        target: 0.93
+        minimum: 0.88
+        weight: 0.25
+      
+      arousal_accuracy:
+        target: 0.92
+        minimum: 0.87
+        weight: 0.25
+      
+      emotion_category_f1:
+        target: 0.94
+        minimum: 0.89
+        weight: 0.2
+    
+    robustness_metrics:
+      cross_domain_performance:
+        weight: 0.4
+        test_domains: ["social_media", "diary_entries", "clinical_notes"]
+        
+      noise_resistance:
+        weight: 0.3
+        noise_levels: [0.1, 0.2, 0.3]
+        
+      length_invariance:
+        weight: 0.3
+        text_lengths: ["short", "medium", "long"]
+  
+  # 语音情绪识别
+  speech_emotion:
+    accuracy_metrics:
+      overall_accuracy:
+        target: 0.92
+        minimum: 0.87
+        weight: 0.3
+      
+      valence_accuracy:
+        target: 0.90
+        minimum: 0.85
+        weight: 0.25
+      
+      arousal_accuracy:
+        target: 0.91
+        minimum: 0.86
+        weight: 0.25
+      
+      speaker_independence:
+        target: 0.88
+        minimum: 0.83
+        weight: 0.2
+    
+    robustness_metrics:
+      background_noise_resistance:
+        weight: 0.4
+        snr_levels: [10, 5, 0, -5]  # dB
+        
+      recording_quality_variance:
+        weight: 0.3
+        quality_levels: ["high", "medium", "low"]
+        
+      accent_robustness:
+        weight: 0.3
+        accent_types: ["standard", "regional", "foreign"]
+  
+  # 多模态融合
+  multimodal_fusion:
+    fusion_effectiveness:
+      improvement_over_best_single:
+        target: 0.15  # 15%提升
+        minimum: 0.10
+        weight: 0.4
+      
+      consistency_across_modalities:
+        target: 0.85
+        minimum: 0.80
+        weight: 0.3
+      
+      confidence_calibration:
+        target: 0.90
+        minimum: 0.85
+        weight: 0.3
+
+# ISO原则有效性评估
+iso_principle_effectiveness:
+  # 情绪轨迹评估
+  emotion_trajectory:
+    trajectory_smoothness:
+      target: 0.90
+      minimum: 0.85
+      measurement: "trajectory_correlation"
+      weight: 0.25
+    
+    target_achievement:
+      valence_convergence:
+        target: 0.85
+        minimum: 0.80
+        tolerance: 0.1
+        weight: 0.2
+      
+      arousal_reduction:
+        target: 0.80
+        minimum: 0.75
+        measurement: "percentage_reduction"
+        weight: 0.2
+    
+    transition_naturalness:
+      target: 0.88
+      minimum: 0.83
+      measurement: "perceptual_evaluation"
+      weight: 0.15
+    
+    stage_coherence:
+      synchronization_stage: 0.90
+      guidance_stage: 0.85
+      consolidation_stage: 0.92
+      weight: 0.2
+  
+  # 学术验证
+  academic_validation:
+    controlled_study_metrics:
+      pre_post_comparison:
+        enable: true
+        measurement_points: ["baseline", "post_session", "follow_up"]
+        primary_outcome: "sleep_readiness_scale"
+        
+      control_group_comparison:
+        enable: true
+        control_conditions: ["silence", "random_music", "non_iso_music"]
+        
+    statistical_significance:
+      alpha_level: 0.05
+      power_requirement: 0.80
+      effect_size_target: 0.5  # medium effect
+
+# 音乐疗愈评估
+music_therapy_metrics:
+  # 音乐质量评估
+  music_quality:
+    technical_quality:
+      audio_fidelity:
+        target: 0.90
+        minimum: 0.85
+        measurement: "spectral_analysis"
+        weight: 0.2
+      
+      harmonic_coherence:
+        target: 0.88
+        minimum: 0.83
+        measurement: "harmony_analysis"
+        weight: 0.25
+      
+      rhythmic_stability:
+        target: 0.92
+        minimum: 0.87
+        measurement: "tempo_consistency"
+        weight: 0.25
+      
+      melodic_continuity:
+        target: 0.85
+        minimum: 0.80
+        measurement: "melodic_flow_analysis"
+        weight: 0.3
+    
+    therapeutic_alignment:
+      iso_principle_adherence:
+        target: 0.90
+        minimum: 0.85
+        measurement: "emotion_trajectory_match"
+        weight: 0.3
+      
+      sleep_induction_features:
+        bpm_progression: 0.25
+        key_modulation: 0.20
+        dynamic_reduction: 0.25
+        texture_simplification: 0.30
+        weight: 0.35
+      
+      personalization_effectiveness:
+        target: 0.82
+        minimum: 0.77
+        measurement: "user_preference_alignment"
+        weight: 0.35
+  
+  # 生理影响评估
+  physiological_impact:
+    sleep_readiness_indicators:
+      heart_rate_reduction:
+        target: 0.15  # 15%降低
+        minimum: 0.10
+        weight: 0.25
+      
+      stress_hormone_reduction:
+        target: 0.20  # 20%降低
+        minimum: 0.15
+        weight: 0.25
+        measurement: "cortisol_levels"  # 理论指标
+      
+      eeg_alpha_enhancement:
+        target: 0.25  # 25%提升
+        minimum: 0.20
+        weight: 0.25
+        frequency_range: [8, 12]
+      
+      subjective_sleepiness:
+        target: 0.75  # 75%的用户报告改善
+        minimum: 0.70
+        weight: 0.25
+        measurement: "stanford_sleepiness_scale"
+
+# 视频同步评估
+video_synchronization_metrics:
+  # 音画同步性
+  audio_visual_sync:
+    temporal_alignment:
+      beat_sync_accuracy:
+        target: 0.90
+        minimum: 0.85
+        tolerance: 0.1  # 秒
+        weight: 0.3
+      
+      emotional_coherence:
+        target: 0.88
+        minimum: 0.83
+        measurement: "cross_modal_correlation"
+        weight: 0.35
+      
+      transition_smoothness:
+        target: 0.85
+        minimum: 0.80
+        measurement: "visual_flow_analysis"
+        weight: 0.35
+    
+    aesthetic_quality:
+      visual_harmony:
+        color_palette_coherence: 0.30
+        composition_balance: 0.25
+        lighting_consistency: 0.25
+        movement_fluidity: 0.20
+        weight: 0.4
+      
+      therapeutic_appropriateness:
+        calming_visual_elements: 0.35
+        absence_of_stimulating_content: 0.30
+        sleep_conducive_imagery: 0.35
+        weight: 0.6
+
+# 系统性能评估
+system_performance_metrics:
+  # 技术性能
+  technical_performance:
+    latency_metrics:
+      emotion_analysis_time:
+        target: 5.0   # 秒
+        maximum: 10.0
+        weight: 0.2
+      
+      music_generation_time:
+        target: 60.0  # 秒
+        maximum: 120.0
+        weight: 0.4
+      
+      video_generation_time:
+        target: 180.0  # 秒
+        maximum: 300.0
+        weight: 0.4
+    
+    resource_utilization:
+      gpu_memory_efficiency:
+        target: 0.85
+        minimum: 0.80
+        weight: 0.4
+      
+      gpu_utilization:
+        target: 0.90
+        minimum: 0.85
+        weight: 0.3
+      
+      cpu_efficiency:
+        target: 0.70
+        minimum: 0.60
+        weight: 0.3
+    
+    reliability_metrics:
+      success_rate:
+        target: 0.98
+        minimum: 0.95
+        weight: 0.4
+      
+      error_recovery_rate:
+        target: 0.95
+        minimum: 0.90
+        weight: 0.3
+      
+      system_stability:
+        target: 0.99
+        minimum: 0.97
+        measurement: "uptime_percentage"
+        weight: 0.3
+
+# 用户体验评估
+user_experience_metrics:
+  # 主观评估
+  subjective_evaluation:
+    satisfaction_scores:
+      overall_satisfaction:
+        target: 4.5  # 5点量表
+        minimum: 4.0
+        weight: 0.25
+      
+      therapeutic_effectiveness:
+        target: 4.3
+        minimum: 3.8
+        weight: 0.30
+      
+      system_usability:
+        target: 4.4
+        minimum: 3.9
+        weight: 0.20
+      
+      content_quality:
+        target: 4.2
+        minimum: 3.7
+        weight: 0.25
+    
+    behavioral_indicators:
+      session_completion_rate:
+        target: 0.90
+        minimum: 0.85
+        weight: 0.3
+      
+      repeat_usage_intention:
+        target: 0.80
+        minimum: 0.75
+        weight: 0.4
+      
+      recommendation_likelihood:
+        target: 0.75
+        minimum: 0.70
+        measurement: "net_promoter_score"
+        weight: 0.3
+  
+  # 客观行为指标
+  objective_behavior:
+    engagement_metrics:
+      attention_maintenance:
+        target: 0.85
+        minimum: 0.80
+        measurement: "focus_tracking"
+        weight: 0.4
+      
+      interaction_frequency:
+        target: "minimal"  # 理想情况下不需要交互
+        measurement: "interruption_count"
+        weight: 0.3
+      
+      session_completion_time:
+        target_range: [18, 22]  # 分钟
+        measurement: "actual_duration"
+        weight: 0.3
+
+# 学术贡献评估
+academic_contribution_metrics:
+  # 创新性评估
+  innovation_assessment:
+    technical_novelty:
+      iso_digitalization: 0.30
+      multimodal_emotion_fusion: 0.25
+      sleep_optimization_algorithm: 0.25
+      hardware_optimization: 0.20
+    
+    theoretical_contribution:
+      emotion_music_mapping: 0.35
+      sleep_physiology_integration: 0.30
+      personalization_framework: 0.35
+  
+  # 可重现性
+  reproducibility:
+    code_documentation: 0.25
+    experiment_replication: 0.30
+    data_availability: 0.20
+    parameter_specification: 0.25
+  
+  # 影响力评估
+  impact_potential:
+    clinical_applicability: 0.30
+    research_extensibility: 0.25
+    practical_deployment: 0.25
+    educational_value: 0.20
+
+# 评估流程配置
+evaluation_workflow:
+  # 评估阶段
+  evaluation_phases:
+    development_testing:
+      frequency: "continuous"
+      scope: ["technical_performance", "basic_functionality"]
+      
+    integration_testing:
+      frequency: "weekly"
+      scope: ["system_performance", "iso_effectiveness"]
+      
+    user_testing:
+      frequency: "milestone_based"
+      scope: ["user_experience", "therapeutic_effectiveness"]
+      
+    academic_validation:
+      frequency: "project_completion"
+      scope: ["all_metrics", "statistical_validation"]
+  
+  # 报告生成
+  reporting:
+    auto_report_generation: true
+    report_formats: ["academic_paper", "technical_report", "dashboard"]
+    visualization_types: ["charts", "tables", "statistical_plots"]
+    
+  # 质量门槛
+  quality_gates:
+    minimum_thresholds:
+      emotion_recognition: 0.90
+      iso_effectiveness: 0.85
+      music_quality: 0.83
+      system_performance: 0.80
+      user_satisfaction: 4.0
+    
+    blocking_thresholds:
+      critical_errors: 0
+      security_vulnerabilities: 0
+      data_privacy_violations: 0
+      ethical_concerns: 0

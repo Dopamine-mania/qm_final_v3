@@ -1,0 +1,374 @@
+# 《心境流转》模型配置
+# 支持多种硬件配置的模型选择系统
+
+# 情绪识别模型配置
+emotion_recognition:
+  text_emotion:
+    # 当前激活模型
+    active: "roberta_base_emotion"
+    
+    # 可用模型列表
+    models:
+      roberta_base_emotion:
+        adapter_class: "RoBERTaEmotionAdapter"
+        model_id: "cardiffnlp/twitter-roberta-base-emotion"
+        memory_usage: "2GB"
+        accuracy: 0.95
+        features:
+          - "valence_arousal_mapping"
+          - "emotion_confidence"
+          - "multilingual_support"
+        
+      roberta_large_emotion:
+        adapter_class: "RoBERTaEmotionAdapter"
+        model_id: "j-hartmann/emotion-english-distilroberta-base"
+        memory_usage: "4GB"
+        accuracy: 0.97
+        features:
+          - "enhanced_accuracy"
+          - "detailed_emotion_categories"
+        
+      bert_emotion_backup:
+        adapter_class: "BERTEmotionAdapter"
+        model_id: "microsoft/DialoGPT-medium"
+        memory_usage: "1.5GB"
+        accuracy: 0.92
+        features:
+          - "lightweight"
+          - "fast_inference"
+  
+  speech_emotion:
+    # 当前激活模型
+    active: "wav2vec2_iemocap"
+    
+    # 可用模型列表
+    models:
+      wav2vec2_iemocap:
+        adapter_class: "Wav2Vec2EmotionAdapter"
+        model_id: "speechbrain/emotion-recognition-wav2vec2-IEMOCAP"
+        memory_usage: "4GB"
+        accuracy: 0.92
+        features:
+          - "iemocap_trained"
+          - "8_emotion_categories"
+          - "optimized_inference"
+        
+      wav2vec2_ravdess:
+        adapter_class: "Wav2Vec2EmotionAdapter"
+        model_id: "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
+        memory_usage: "6GB"
+        accuracy: 0.94
+        features:
+          - "ravdess_trained"
+          - "enhanced_accuracy"
+          - "multilingual"
+        
+      whisper_emotion:
+        adapter_class: "WhisperEmotionAdapter"
+        model_id: "openai/whisper-base"
+        memory_usage: "3GB"
+        accuracy: 0.88
+        features:
+          - "multilingual"
+          - "robust_noise_handling"
+          - "speech_to_text_integration"
+  
+  # 多模态融合配置
+  multimodal_fusion:
+    active: "weighted_confidence_fusion"
+    
+    fusion_strategies:
+      weighted_confidence_fusion:
+        algorithm: "confidence_weighted_average"
+        text_weight: 0.6
+        speech_weight: 0.4
+        confidence_threshold: 0.7
+        
+      attention_fusion:
+        algorithm: "attention_mechanism"
+        embedding_dim: 512
+        num_heads: 8
+        dropout: 0.1
+        
+      ensemble_fusion:
+        algorithm: "ensemble_voting"
+        voting_strategy: "soft_voting"
+        confidence_weighting: true
+
+# 音乐生成模型配置
+music_generation:
+  # 当前激活模型
+  active: "musicgen_medium"
+  
+  # 可用模型列表
+  models:
+    musicgen_small:
+      adapter_class: "MusicGenAdapter"
+      model_id: "facebook/musicgen-small"
+      memory_usage: "8GB"
+      parameters: "300M"
+      max_duration: 30
+      features:
+        - "fast_generation"
+        - "low_memory"
+        - "stable_quality"
+      
+    musicgen_medium:
+      adapter_class: "MusicGenAdapter"
+      model_id: "facebook/musicgen-medium"
+      memory_usage: "16GB"
+      parameters: "1.5B"
+      max_duration: 60
+      features:
+        - "balanced_performance"
+        - "good_quality"
+        - "iso_principle_support"
+      
+    musicgen_large:
+      adapter_class: "MusicGenAdapter"
+      model_id: "facebook/musicgen-large"
+      memory_usage: "24GB"
+      parameters: "3.3B"
+      max_duration: 120
+      features:
+        - "highest_quality"
+        - "complex_compositions"
+        - "advanced_emotion_control"
+      
+    audioldm2:
+      adapter_class: "AudioLDMAdapter"
+      model_id: "cvssp/audioldm2-music"
+      memory_usage: "12GB"
+      parameters: "1.2B"
+      max_duration: 60
+      features:
+        - "diffusion_based"
+        - "high_fidelity"
+        - "flexible_control"
+      
+    acestep_integration:
+      adapter_class: "ACEStepAdapter"
+      model_path: "../qm_final/TTM/ACE_STEP"
+      memory_usage: "20GB"
+      parameters: "2B+"
+      max_duration: 180
+      features:
+        - "existing_integration"
+        - "proven_performance"
+        - "custom_optimizations"
+
+# 视频生成模型配置
+video_generation:
+  # 当前激活模型
+  active: "hunyuan_optimized"
+  
+  # 可用模型列表
+  models:
+    hunyuan_optimized:
+      adapter_class: "HunyuanVideoAdapter"
+      model_id: "tencent/HunyuanVideo"
+      memory_usage: "24GB"  # 优化后
+      parameters: "13B"
+      max_resolution: "720p"
+      max_frames: 129
+      optimizations:
+        - "temporal_tiling"
+        - "fp8_quantization"
+        - "cpu_offloading"
+      features:
+        - "sota_quality"
+        - "audio_sync_capable"
+        - "memory_optimized"
+      
+    mochi_1:
+      adapter_class: "MochiVideoAdapter"
+      model_id: "genmo/mochi-1-preview"
+      memory_usage: "20GB"
+      parameters: "10B"
+      max_resolution: "480p"
+      max_frames: 60
+      features:
+        - "open_source"
+        - "good_motion"
+        - "stable_generation"
+      
+    cogvideo_x:
+      adapter_class: "CogVideoAdapter"
+      model_id: "THUDM/CogVideoX-2b"
+      memory_usage: "16GB"
+      parameters: "2B"
+      max_resolution: "480p"
+      max_frames: 49
+      features:
+        - "lightweight"
+        - "fast_generation"
+        - "chinese_optimized"
+      
+    ltx_video:
+      adapter_class: "LTXVideoAdapter"
+      model_id: "Lightricks/LTX-Video"
+      memory_usage: "12GB"
+      parameters: "1.2B"
+      max_resolution: "360p"
+      max_frames: 32
+      features:
+        - "very_lightweight"
+        - "real_time_capable"
+        - "stable_output"
+
+# TTS模型配置 (可选)
+tts_models:
+  active: "existing_tts"  # 使用现有TTS系统
+  
+  models:
+    existing_tts:
+      adapter_class: "ExistingTTSAdapter"
+      model_path: "../qm_final/TTS2"
+      features:
+        - "proven_integration"
+        - "multilingual"
+        - "emotion_control"
+    
+    bark_tts:
+      adapter_class: "BarkTTSAdapter"
+      model_id: "suno/bark"
+      memory_usage: "4GB"
+      features:
+        - "emotional_speech"
+        - "voice_cloning"
+        - "natural_prosody"
+
+# 硬件配置文件
+hardware_profiles:
+  # GPU配置文件
+  gpu_40gb:
+    name: "NVIDIA A100 40GB"
+    recommended_models:
+      text_emotion: "roberta_base_emotion"
+      speech_emotion: "wav2vec2_iemocap"
+      music_generation: "musicgen_medium"
+      video_generation: "hunyuan_optimized"
+    
+    optimizations:
+      enable_cpu_offloading: true
+      enable_mixed_precision: true
+      enable_gradient_checkpointing: true
+      sequential_loading: true
+    
+    memory_allocation:
+      emotion_analysis: "8GB"
+      music_generation: "20GB"
+      video_generation: "30GB"
+      buffer: "2GB"
+  
+  gpu_80gb:
+    name: "NVIDIA A100 80GB / H100"
+    recommended_models:
+      text_emotion: "roberta_large_emotion"
+      speech_emotion: "wav2vec2_ravdess"
+      music_generation: "musicgen_large"
+      video_generation: "hunyuan_optimized"
+    
+    optimizations:
+      enable_cpu_offloading: false
+      enable_mixed_precision: true
+      enable_gradient_checkpointing: false
+      sequential_loading: false
+    
+    memory_allocation:
+      emotion_analysis: "10GB"
+      music_generation: "30GB"
+      video_generation: "35GB"
+      buffer: "5GB"
+  
+  gpu_24gb:  # 作为备用配置
+    name: "RTX 4090 / RTX 3090"
+    recommended_models:
+      text_emotion: "roberta_base_emotion"
+      speech_emotion: "wav2vec2_iemocap"
+      music_generation: "musicgen_small"
+      video_generation: "cogvideo_x"
+    
+    optimizations:
+      enable_cpu_offloading: true
+      enable_mixed_precision: true
+      enable_gradient_checkpointing: true
+      sequential_loading: true
+      aggressive_gc: true
+    
+    memory_allocation:
+      emotion_analysis: "4GB"
+      music_generation: "12GB"
+      video_generation: "16GB"
+      buffer: "2GB"
+
+# 性能优化配置
+optimization:
+  # 显存优化
+  memory_optimization:
+    auto_memory_management: true
+    garbage_collection_frequency: "after_each_stage"
+    model_unloading_strategy: "immediate"
+    cache_management: "lru"
+    
+  # 推理优化
+  inference_optimization:
+    batch_size: 1  # 为了显存稳定性
+    num_workers: 2
+    pin_memory: true
+    non_blocking: true
+    
+  # 并行化配置
+  parallelization:
+    enable_model_parallelism: false  # 单GPU环境
+    enable_pipeline_parallelism: true
+    async_generation: true
+    
+  # 缓存策略
+  caching:
+    enable_model_caching: true
+    cache_directory: "data/model_cache"
+    max_cache_size: "50GB"
+    auto_cleanup: true
+
+# 学术研究配置
+research:
+  # 对比研究配置
+  comparative_study:
+    enable_model_comparison: true
+    benchmark_models: ["roberta_base_emotion", "bert_emotion_backup"]
+    evaluation_metrics: ["accuracy", "f1_score", "inference_time", "memory_usage"]
+    
+  # 实验配置
+  experimentation:
+    enable_ablation_study: true
+    parameter_sensitivity_analysis: true
+    cross_validation_folds: 5
+    
+  # 数据采集
+  data_collection:
+    enable_performance_logging: true
+    enable_quality_metrics: true
+    enable_user_feedback: false  # 暂时禁用
+
+# 部署配置
+deployment:
+  # 环境配置
+  environment:
+    platform: "jupyter_hub"
+    python_version: "3.9+"
+    cuda_version: "11.8+"
+    
+  # 服务配置
+  service:
+    api_framework: "fastapi"
+    websocket_support: true
+    cors_enabled: true
+    max_request_size: "100MB"
+    
+  # 监控配置
+  monitoring:
+    enable_gpu_monitoring: true
+    enable_performance_tracking: true
+    log_level: "INFO"
+    metrics_collection_interval: 30  # 秒
