@@ -96,6 +96,7 @@ class BaseLayer(LayerInterface):
         self.processing_times = []
         self.error_count = 0
         self.total_processed = 0
+        self.total_processing_time = 0.0
         self.logger = logging.getLogger(f"{__name__}.{self.layer_name}")
         
         if config.debug_mode:
