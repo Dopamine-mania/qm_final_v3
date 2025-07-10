@@ -274,7 +274,7 @@ class QMFinal3System:
                 'content_type': generation_config.get('content_type', 'both'),
                 'audio_enabled': generation_config.get('audio_enabled', True),
                 'video_enabled': generation_config.get('video_enabled', True),
-                'audio_duration': generation_config.get('audio_duration', 30.0),
+                'audio_duration': video_gen_config.get('duration', 30.0),  # 与视频时长保持一致
                 'video_duration': video_gen_config.get('duration', 30.0),  # 从video_generation读取
                 'video_fps': video_gen_config.get('fps', 30),              # 从video_generation读取
                 'video_resolution': video_gen_config.get('resolution', [1920, 1080]),  # 从video_generation读取
