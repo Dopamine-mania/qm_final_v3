@@ -402,17 +402,18 @@ class ProceduralVideoGenerator:
         total_frames = int(duration * self.fps)
         frames = []
         
-        logger.info(f"开始生成视频序列，共{total_frames}帧")
+        logger.info(f"🎬 开始生成视频序列，共{total_frames}帧（预计耗时: {total_frames/15:.1f}秒）")
         
         for frame_index in range(total_frames):
             frame = self.generate_frame(frame_index, music_params)
             frames.append(frame)
             
-            # 每100帧记录一次进度
-            if frame_index % 100 == 0:
-                logger.debug(f"视频生成进度: {frame_index}/{total_frames}")
+            # 每10帧记录一次进度（15fps时约每0.67秒）
+            if frame_index % 10 == 0 or frame_index == total_frames - 1:
+                progress = (frame_index + 1) / total_frames * 100
+                logger.info(f"📹 视频生成进度: {frame_index+1}/{total_frames} ({progress:.1f}%)")
         
-        logger.info(f"视频序列生成完成")
+        logger.info(f"✅ 视频序列生成完成")
         return frames
 
 class GenerationLayer(BaseLayer):
