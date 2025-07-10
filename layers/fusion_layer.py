@@ -535,9 +535,9 @@ class FusionLayer(BaseLayer):
     
     def _interpret_emotion_results(self, fused_results: Dict[str, torch.Tensor]) -> Dict[str, Any]:
         """解释情绪分类结果"""
-        emotion_probs = fused_results['emotion_probs'].cpu().numpy()
+        emotion_probs = fused_results['emotion_probs'].detach().cpu().numpy()
         confidence = fused_results['confidence'].item()
-        intensity = fused_results['intensity'].cpu().numpy()
+        intensity = fused_results['intensity'].detach().cpu().numpy()
         
         # 找到最可能的情绪
         top_emotion_id = np.argmax(emotion_probs)
@@ -629,7 +629,7 @@ class FusionLayer(BaseLayer):
                 timestamp=datetime.now(),
                 data={
                     'emotion_analysis': emotion_analysis,
-                    'raw_features': {k: v.cpu().numpy().tolist() for k, v in features.items()},
+                    'raw_features': {k: v.detach().cpu().numpy().tolist() for k, v in features.items()},
                     'fusion_strategy': self.config.fusion_strategy,
                     'multimodal_weights': fused_results.get('modality_weights', {}),
                     'processing_info': {
