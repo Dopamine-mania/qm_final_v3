@@ -109,7 +109,7 @@ class QMFinal3System:
                     'extended_emotions': 18,
                     'fusion_strategy': 'confidence_weighted',
                     'enable_emotion_relationships': True,
-                    'use_gpu': False,  # 暂时禁用GPU以简化测试
+                    'use_gpu': fusion_config.get('use_gpu', True),
                     'max_processing_time': 150.0
                 },
                 'mapping_layer': {
@@ -121,7 +121,7 @@ class QMFinal3System:
                     'kg_weight': 0.6,
                     'mlp_weight': 0.4,
                     'sleep_therapy_mode': True,
-                    'use_gpu': False,  # 暂时禁用GPU以简化测试
+                    'use_gpu': mapping_config.get('use_gpu', True),
                     'max_processing_time': 100.0
                 },
                 'generation_layer': {
@@ -136,7 +136,7 @@ class QMFinal3System:
                     'therapy_optimized': True,
                     'iso_stage_aware': True,
                     'binaural_beats': True,
-                    'use_gpu': False,  # 暂时禁用GPU以简化测试
+                    'use_gpu': generation_config.get('use_gpu', True),
                     'max_processing_time': 200.0
                 },
                 'rendering_layer': {
@@ -217,7 +217,7 @@ class QMFinal3System:
                 'total_emotions': fusion_config.get('emotion_dimensions', fusion_config.get('total_emotions', 27)),
                 'fusion_strategy': fusion_config.get('fusion_strategy', 'confidence_weighted'),
                 'enable_emotion_relationships': fusion_config.get('enable_emotion_relationships', True),
-                'use_gpu': False,  # 暂时禁用GPU
+                'use_gpu': fusion_config.get('use_gpu', True),
             }
             fusion_layer_config = FusionLayerConfig(**processed_fusion_config)
             fusion_layer = FusionLayer(fusion_layer_config)
@@ -240,7 +240,7 @@ class QMFinal3System:
                 'kg_weight': mapping_config.get('kg_weight', 0.6),
                 'mlp_weight': mapping_config.get('mlp_weight', 0.4),
                 'sleep_therapy_mode': mapping_config.get('sleep_therapy_mode', True),
-                'use_gpu': False,  # 暂时禁用GPU
+                'use_gpu': mapping_config.get('use_gpu', True),
             }
             mapping_layer_config = MappingLayerConfig(**processed_mapping_config)
             mapping_layer = MappingLayer(mapping_layer_config)
@@ -266,7 +266,7 @@ class QMFinal3System:
                 'therapy_optimized': generation_config.get('therapy_optimized', True),
                 'iso_stage_aware': generation_config.get('iso_stage_aware', True),
                 'binaural_beats': generation_config.get('binaural_beats', True),
-                'use_gpu': False,  # 暂时禁用GPU
+                'use_gpu': generation_config.get('use_gpu', True),
             }
             generation_layer_config = GenerationLayerConfig(**processed_generation_config)
             generation_layer = GenerationLayer(generation_layer_config)
@@ -292,6 +292,7 @@ class QMFinal3System:
                 'audio_latency_ms': rendering_config.get('audio_latency_ms', 50.0),
                 'video_latency_ms': rendering_config.get('video_latency_ms', 50.0),
                 'buffer_size_ms': rendering_config.get('buffer_size_ms', 500.0),
+                'use_gpu': rendering_config.get('use_gpu', True),
             }
             rendering_layer_config = RenderingLayerConfig(**processed_rendering_config)
             rendering_layer = RenderingLayer(rendering_layer_config)
