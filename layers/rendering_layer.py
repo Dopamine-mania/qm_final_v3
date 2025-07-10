@@ -112,6 +112,7 @@ class RenderingLayerConfig(LayerConfig):
     
     # 性能配置
     use_hardware_acceleration: bool = True
+    use_gpu: bool = True  # GPU加速支持
     max_processing_time: float = 16.7  # ms, ~1 frame at 60fps
     
     # 监控配置
