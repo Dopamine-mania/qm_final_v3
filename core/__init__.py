@@ -8,16 +8,23 @@
 
 # 导入理论基础模块
 from .theory import *
-from .models import *
 from .utils import *
+
+# 导入模型模块
+try:
+    from .models import *
+except ImportError as e:
+    import logging
+    logging.warning(f"模型模块导入失败: {e}")
 
 __all__ = [
     # 理论基础
     'ISOPrinciple', 'MusicPsychology', 'SleepPhysiology', 'ValenceArousal',
     
-    # 模型管理
-    'ModelFactory', 'ModelRegistry', 'ModelAdapter',
+    # 模型类
+    'ModelFactory', 'EmotionVector', 'MusicParameters', 'ProcessingResult',
+    'SystemConfig', 'TherapySession', 'UserProfile', 'PerformanceMetrics',
     
     # 工具函数
-    'ConfigLoader', 'DataValidator', 'PerformanceMonitor'
+    'ConfigLoader', 'setup_logging', 'get_project_root'
 ]
