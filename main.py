@@ -389,12 +389,19 @@ class QMFinal3System:
     
     async def _main_loop(self):
         """主循环"""
-        logger.info("进入主循环...")
+        logger.info("🚀 进入演示主循环（按Ctrl+C停止）...")
         
+        cycle_count = 0
         try:
             while self.is_running:
+                cycle_count += 1
+                logger.info(f"🔄 ===== 第 {cycle_count} 轮处理开始 =====")
+                
                 # 处理输入（这里简化为测试用例）
                 await self._process_test_input()
+                
+                logger.info(f"✅ ===== 第 {cycle_count} 轮处理完成 =====")
+                logger.info(f"⏱️  等待1秒后开始第 {cycle_count + 1} 轮...")
                 
                 # 等待一段时间
                 await asyncio.sleep(1.0)
@@ -425,8 +432,9 @@ class QMFinal3System:
         
         # 通过管道处理
         if self.pipeline:
+            logger.info("🔗 开始6层管道处理...")
             result = await self.pipeline.process(test_data)
-            logger.info(f"处理结果: {result.layer_name}, 置信度: {result.confidence:.2f}")
+            logger.info(f"🎯 6层管道处理结果: {result.layer_name}, 置信度: {result.confidence:.2f}")
     
     async def stop(self):
         """停止系统"""
