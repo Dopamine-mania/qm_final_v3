@@ -162,9 +162,9 @@ def optimize_gpu_settings():
             print(f"GPU {i}: {props.name}")
             print(f"  计算能力: {props.major}.{props.minor}")
             print(f"  多处理器: {props.multi_processor_count}")
-            print(f"  最大线程/块: {props.max_threads_per_block}")
-            print(f"  最大块维度: {props.max_block_dims}")
-            print(f"  最大网格维度: {props.max_grid_dims}")
+            print(f"  最大线程/块: {props.max_threads_per_multiprocessor}")
+            print(f"  共享内存/块: {props.max_shared_memory_per_block}B")
+            print(f"  总内存: {props.total_memory / 1024**3:.1f}GB")
     else:
         print("❌ 未检测到GPU，将使用CPU")
         print("建议:")
