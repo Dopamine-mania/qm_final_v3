@@ -389,22 +389,34 @@ class QMFinal3System:
     
     async def _main_loop(self):
         """主循环"""
-        logger.info("🚀 进入演示主循环（按Ctrl+C停止）...")
+        logger.info("🚀 演示模式：将测试3种不同情绪场景...")
         
-        cycle_count = 0
+        # 测试情绪场景
+        test_scenarios = [
+            "我今天感到很焦虑，躺在床上睡不着",
+            "感觉很疲惫但是大脑还在活跃，难以入睡", 
+            "心情平静，准备进入睡眠状态"
+        ]
+        
+        performance_results = []
+        
         try:
-            while self.is_running:
-                cycle_count += 1
-                logger.info(f"🔄 ===== 第 {cycle_count} 轮处理开始 =====")
+            for cycle_count, scenario in enumerate(test_scenarios, 1):
+                logger.info(f"🔄 ===== 第 {cycle_count}/3 轮：{scenario} =====")
                 
-                # 处理输入（这里简化为测试用例）
-                await self._process_test_input()
+                # 处理特定情绪场景
+                result = await self._process_emotion_scenario(scenario)
+                performance_results.append(result)
                 
                 logger.info(f"✅ ===== 第 {cycle_count} 轮处理完成 =====")
-                logger.info(f"⏱️  等待1秒后开始第 {cycle_count + 1} 轮...")
                 
-                # 等待一段时间
-                await asyncio.sleep(1.0)
+                if cycle_count < len(test_scenarios):
+                    logger.info(f"⏱️  等待2秒后开始第 {cycle_count + 1} 轮...")
+                    await asyncio.sleep(2.0)
+            
+            # 输出演示总结
+            await self._show_demo_summary(performance_results)
+            self.is_running = False  # 自动停止
                 
         except KeyboardInterrupt:
             logger.info("收到中断信号，正在关闭...")
@@ -435,6 +447,87 @@ class QMFinal3System:
             logger.info("🔗 开始6层管道处理...")
             result = await self.pipeline.process(test_data)
             logger.info(f"🎯 6层管道处理结果: {result.layer_name}, 置信度: {result.confidence:.2f}")
+    
+    async def _process_emotion_scenario(self, scenario_text: str):
+        """处理特定情绪场景"""
+        # 添加文本输入到输入层
+        if self.layers:
+            input_layer = self.layers[0]  # 假设第一层是输入层
+            if hasattr(input_layer, 'add_text_input'):
+                input_layer.add_text_input(scenario_text)
+        
+        # 创建测试数据
+        from layers.base_layer import LayerData
+        from datetime import datetime
+        
+        test_data = LayerData(
+            layer_name="emotion_scenario_test",
+            timestamp=datetime.now(),
+            data={"test_input": scenario_text},
+            metadata={"source": "emotion_scenario", "scenario": scenario_text}
+        )
+        
+        # 通过管道处理
+        if self.pipeline:
+            logger.info("🔗 开始6层管道处理...")
+            start_time = datetime.now()
+            result = await self.pipeline.process(test_data)
+            end_time = datetime.now()
+            
+            processing_time = (end_time - start_time).total_seconds()
+            
+            logger.info(f"🎯 情绪场景处理结果: {result.layer_name}, 置信度: {result.confidence:.2f}")
+            
+            # 提取关键结果信息
+            emotion_info = {}
+            if hasattr(result, 'data') and 'emotion_analysis' in result.data:
+                analysis = result.data['emotion_analysis']
+                emotion_info = {
+                    'primary_emotion': analysis.get('primary_emotion', {}),
+                    'confidence': result.confidence,
+                    'processing_time': processing_time
+                }
+            
+            return {
+                'scenario': scenario_text,
+                'emotion_info': emotion_info,
+                'processing_time': processing_time,
+                'confidence': result.confidence
+            }
+        
+        return None
+    
+    async def _show_demo_summary(self, results):
+        """显示演示总结"""
+        logger.info("🎉 ===== 演示完成！性能总结 =====")
+        
+        if not results:
+            logger.info("❌ 没有收集到有效结果")
+            return
+        
+        total_time = sum(r['processing_time'] for r in results if r)
+        avg_time = total_time / len(results)
+        
+        logger.info(f"📊 性能统计:")
+        logger.info(f"   总共处理: {len(results)} 个情绪场景")
+        logger.info(f"   总耗时: {total_time:.2f} 秒")
+        logger.info(f"   平均耗时: {avg_time:.2f} 秒/场景")
+        logger.info(f"   目标性能: <0.5 秒/场景")
+        
+        if avg_time <= 0.5:
+            logger.info("✅ 性能达标！")
+        else:
+            logger.info(f"⚠️  性能需优化，超出目标 {avg_time - 0.5:.2f} 秒")
+        
+        logger.info(f"🎭 情绪识别结果:")
+        for i, result in enumerate(results, 1):
+            if result and 'emotion_info' in result:
+                emotion = result['emotion_info'].get('primary_emotion', {})
+                emotion_name = emotion.get('name', '未知')
+                confidence = result['confidence']
+                logger.info(f"   场景{i}: {emotion_name} (置信度: {confidence:.2f})")
+        
+        logger.info("🎯 演示模式自动结束")
     
     async def stop(self):
         """停止系统"""
