@@ -60,6 +60,8 @@ layers:
     layer_name: "FusionLayer"
     debug_mode: false
     max_processing_time_ms: 150
+    use_gpu: true
+    batch_size: 4
     
     # 27维情绪空间配置
     emotion_space:
@@ -129,6 +131,8 @@ layers:
     layer_name: "MappingLayer"
     debug_mode: false
     max_processing_time_ms: 100
+    use_gpu: true
+    batch_size: 4
     
     # KG-MLP混合架构
     kg_mlp_config:
@@ -184,6 +188,8 @@ layers:
     layer_name: "GenerationLayer"
     debug_mode: false
     max_processing_time_ms: 150
+    use_gpu: true
+    batch_size: 4
     
     # 音乐生成配置
     music_generation:
@@ -203,9 +209,9 @@ layers:
     # 视频生成配置
     video_generation:
       model: "stable_diffusion_video"
-      resolution: [960, 540]
-      fps: 24
-      duration: 10  # 秒
+      resolution: [480, 270]  # 降低分辨率提高速度
+      fps: 15                 # 降低帧率提高速度
+      duration: 5             # 缩短时长提高速度
       
       # 视觉模式
       visual_modes:
@@ -227,12 +233,14 @@ layers:
     layer_name: "RenderingLayer"
     debug_mode: false
     max_processing_time_ms: 80
+    use_gpu: true
+    batch_size: 4
     
     # 渲染配置
     rendering_config:
-      target_fps: 30
+      target_fps: 15         # 降低目标帧率提高性能
       audio_latency_ms: 20
-      video_latency_ms: 33
+      video_latency_ms: 67   # 15fps对应67ms
       buffer_size: 3
       
     # 质量自适应
