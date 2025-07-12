@@ -475,45 +475,118 @@ class FusionLayer(BaseLayer):
         return features
     
     def _extract_text_features(self, text: str) -> torch.Tensor:
-        """简化的文本特征提取"""
-        # 睡眠相关情绪关键词
+        """增强的文本特征提取"""
+        # 27维情绪关键词映射（更细粒度）
         emotion_keywords = {
-            'anxiety': ['焦虑', '紧张', '担心', '害怕', '不安'],
-            'sadness': ['悲伤', '沮丧', '失落', '难过', '抑郁'],
-            'anger': ['愤怒', '生气', '烦躁', '恼火', '愤恨'],
-            'fear': ['恐惧', '害怕', '惊慌', '胆怯', '畏惧'],
-            'joy': ['开心', '快乐', '高兴', '愉快', '兴奋'],
-            'relaxation': ['放松', '平静', '宁静', '安详', '舒适'],
-            'insomnia': ['失眠', '睡不着', '难眠', '辗转反侧'],
-            'drowsiness': ['困倦', '想睡', '疲惫', '倦意', '睡意'],
-            'restlessness': ['不安', '躁动', '烦躁', '坐立不安'],
-            'peace': ['平和', '安宁', '祥和', '宁静', '安静']
+            # 基础情绪（9维）
+            'anger': ['愤怒', '生气', '烦躁', '恼火', '愤恨', '激怒'],
+            'fear_anxiety': ['焦虑', '紧张', '担心', '害怕', '不安', '恐惧', '惊慌'],
+            'disgust': ['厌恶', '恶心', '反感', '讨厌', '憎恶'],
+            'sadness': ['悲伤', '沮丧', '失落', '难过', '抑郁', '消沉'],
+            'amusement': ['有趣', '好玩', '逗乐', '娱乐', '幽默'],
+            'joy': ['开心', '快乐', '高兴', '愉快', '兴奋', '欣喜'],
+            'inspiration': ['启发', '激励', '鼓舞', '振奋', '感动'],
+            'tenderness': ['温柔', '温暖', '体贴', '关爱', '柔情'],
+            'neutral': ['平常', '一般', '普通', '正常', '平淡'],
+            
+            # 睡眠专用情绪（18维）
+            'rumination': ['反刍', '思考', '纠结', '想太多', '胡思乱想', '钻牛角尖'],
+            'sleep_anxiety': ['睡眠焦虑', '睡不着', '失眠', '难眠', '睡觉焦虑'],
+            'physical_fatigue': ['身体疲惫', '体力不支', '身体累', '肌肉酸痛', '体力透支'],
+            'mental_fatigue': ['精神疲惫', '脑子累', '思维疲劳', '心理疲惫', '精神透支'],
+            'hyperarousal': ['过度觉醒', '精神亢奋', '太兴奋', '睡不下去', '大脑活跃'],
+            'bedtime_worry': ['就寝担忧', '睡前担心', '床上焦虑', '躺下就担心'],
+            'sleep_dread': ['睡眠恐惧', '怕睡觉', '睡觉恐惧', '害怕入睡'],
+            'racing_thoughts': ['思维奔逸', '想法很多', '脑子转不停', '思绪万千'],
+            'somatic_tension': ['躯体紧张', '身体紧绷', '肌肉紧张', '全身紧张'],
+            'emotional_numbness': ['情感麻木', '没感觉', '情绪冷淡', '无所谓'],
+            'restless_energy': ['不安能量', '躁动', '坐立不安', '精力过剩'],
+            'sleep_frustration': ['睡眠挫败', '睡不着很烦', '失眠挫折', '对睡眠失望'],
+            'bedtime_loneliness': ['就寝孤独', '一个人睡觉', '夜晚孤单', '睡前孤独'],
+            'anticipatory_anxiety': ['预期焦虑', '担心明天', '提前担心', '未来焦虑'],
+            'sleep_perfectionism': ['睡眠完美主义', '必须睡好', '睡觉要求高', '对睡眠苛刻'],
+            'bedroom_discomfort': ['卧室不适', '环境不舒服', '床不舒服', '房间问题'],
+            'sleep_monitoring_anxiety': ['睡眠监控焦虑', '担心睡眠质量', '过度关注睡眠'],
+            'morning_dread': ['晨起恐惧', '不想起床', '害怕早上', '起床焦虑'],
+            
+            # 正面睡眠状态
+            'peaceful': ['平静', '安详', '宁静', '祥和', '安宁'],
+            'relaxed': ['放松', '舒适', '松弛', '自在', '惬意'],
+            'drowsy': ['困倦', '想睡', '疲倦', '倦意', '睡意'],
+            'ready_for_sleep': ['准备睡觉', '想要休息', '可以睡了', '准备入睡']
         }
         
-        # 计算特征向量
-        text_lower = text.lower()
+        # 计算特征向量（增强版）
+        text_lower = text.lower().replace('，', '').replace('。', '').replace('！', '').replace('？', '')
         features = []
         
+        # 对每个情绪类别计算匹配分数
+        emotion_scores = {}
         for emotion, keywords in emotion_keywords.items():
-            score = sum(1 for keyword in keywords if keyword in text_lower)
+            # 计算关键词匹配分数（考虑权重）
+            score = 0
+            for keyword in keywords:
+                if keyword in text_lower:
+                    # 根据关键词长度给予不同权重
+                    weight = len(keyword) / 10.0  # 更长的关键词权重更高
+                    score += weight
+            emotion_scores[emotion] = score
             features.append(score)
         
-        # 添加文本长度和其他统计特征
-        features.extend([
+        # 添加语义特征
+        semantic_features = [
             len(text),  # 文本长度
-            text.count('。'),  # 句子数
-            text.count('！'),  # 感叹号数
-            text.count('？'),  # 问号数
-        ])
+            text.count('很'),  # 强化词
+            text.count('非常'),  # 强化词
+            text.count('特别'),  # 强化词
+            text.count('就是'),  # 确定词
+            text.count('感觉'),  # 感受词
+            text.count('觉得'),  # 感受词
+            1 if '睡不着' in text_lower else 0,  # 失眠指标
+            1 if '疲惫' in text_lower else 0,  # 疲劳指标
+            1 if '焦虑' in text_lower else 0,  # 焦虑指标
+            1 if '平静' in text_lower else 0,  # 平静指标
+            1 if '大脑' in text_lower or '脑子' in text_lower else 0,  # 大脑活动
+            1 if '身体' in text_lower else 0,  # 身体状态
+        ]
+        features.extend(semantic_features)
+        
+        # 情绪强度计算
+        max_emotion_score = max(emotion_scores.values()) if emotion_scores.values() else 0
+        emotion_intensity = min(max_emotion_score, 5.0) / 5.0  # 标准化到0-1
+        features.append(emotion_intensity)
+        
+        # 情绪极性（正面/负面）
+        positive_emotions = ['joy', 'peaceful', 'relaxed', 'drowsy', 'ready_for_sleep', 'tenderness', 'inspiration']
+        negative_emotions = ['anger', 'fear_anxiety', 'sadness', 'sleep_anxiety', 'sleep_frustration']
+        
+        positive_score = sum(emotion_scores.get(e, 0) for e in positive_emotions)
+        negative_score = sum(emotion_scores.get(e, 0) for e in negative_emotions)
+        
+        if positive_score + negative_score > 0:
+            polarity = (positive_score - negative_score) / (positive_score + negative_score)
+        else:
+            polarity = 0.0
+        features.append(polarity)
         
         # 填充到768维（模拟BERT特征）
         while len(features) < 768:
-            features.extend(features[:min(10, 768 - len(features))])
+            # 使用更复杂的填充策略
+            remaining = 768 - len(features)
+            if remaining > len(features):
+                features.extend(features)
+            else:
+                features.extend(features[:remaining])
         
         features = features[:768]  # 截断到768维
         
-        # 归一化
+        # 增强归一化（防止全零向量）
         features_tensor = torch.tensor(features, dtype=torch.float32).unsqueeze(0).to(self.device)
+        
+        # 如果特征向量全为零，添加小的随机噪声
+        if torch.sum(torch.abs(features_tensor)) < 1e-6:
+            features_tensor += torch.randn_like(features_tensor) * 0.01
+        
         features_tensor = F.normalize(features_tensor, p=2, dim=1)
         
         return features_tensor
