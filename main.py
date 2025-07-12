@@ -19,8 +19,12 @@ import asyncio
 import argparse
 import sys
 import signal
+import os
+import json
 from pathlib import Path
 from typing import Optional, Dict, Any
+from datetime import datetime
+import numpy as np
 
 # 添加项目根目录到Python路径
 sys.path.insert(0, str(Path(__file__).parent))
@@ -478,19 +482,53 @@ class QMFinal3System:
             
             logger.info(f"🎯 情绪场景处理结果: {result.layer_name}, 置信度: {result.confidence:.2f}")
             
-            # 提取关键结果信息
+            # 从管道结果中提取情绪分析信息
             emotion_info = {}
-            if hasattr(result, 'data') and 'emotion_analysis' in result.data:
-                analysis = result.data['emotion_analysis']
-                emotion_info = {
-                    'primary_emotion': analysis.get('primary_emotion', {}),
-                    'confidence': result.confidence,
-                    'processing_time': processing_time
-                }
+            generated_content = {}
+            
+            # 通过管道追踪，从各层获取关键信息
+            if hasattr(result, 'data'):
+                # 尝试从治疗层数据中获取情绪信息
+                if 'emotion_analysis' in result.data:
+                    analysis = result.data['emotion_analysis']
+                    emotion_info = {
+                        'primary_emotion': analysis.get('primary_emotion', {}),
+                        'confidence': result.confidence,
+                        'processing_time': processing_time
+                    }
+                # 获取生成的内容
+                if 'generated_content' in result.data:
+                    generated_content = result.data['generated_content']
+            
+            # 如果没有找到情绪信息，从管道历史中获取
+            if not emotion_info and self.pipeline:
+                pipeline_history = getattr(self.pipeline, 'layer_results', [])
+                for layer_result in pipeline_history:
+                    if (hasattr(layer_result, 'data') and 
+                        'emotion_analysis' in layer_result.data):
+                        analysis = layer_result.data['emotion_analysis']
+                        emotion_info = {
+                            'primary_emotion': analysis.get('primary_emotion', {}),
+                            'confidence': layer_result.confidence,
+                            'processing_time': processing_time,
+                            'layer_name': layer_result.layer_name
+                        }
+                        logger.debug(f"从{layer_result.layer_name}获取到情绪信息: {analysis.get('primary_emotion', {}).get('name', '未知')}")
+                        break
+                
+                # 也从生成层获取内容
+                for layer_result in pipeline_history:
+                    if (hasattr(layer_result, 'data') and 
+                        'generated_content' in layer_result.data and
+                        not generated_content):
+                        generated_content = layer_result.data['generated_content']
+                        logger.debug(f"从{layer_result.layer_name}获取到生成内容")
+                        break
             
             return {
                 'scenario': scenario_text,
                 'emotion_info': emotion_info,
+                'generated_content': generated_content,
                 'processing_time': processing_time,
                 'confidence': result.confidence
             }
@@ -521,13 +559,32 @@ class QMFinal3System:
         
         logger.info(f"🎭 情绪识别结果:")
         for i, result in enumerate(results, 1):
-            if result and 'emotion_info' in result:
-                emotion = result['emotion_info'].get('primary_emotion', {})
-                emotion_name = emotion.get('name', '未知')
+            if result:
+                # 显示情绪信息
+                if 'emotion_info' in result and result['emotion_info']:
+                    emotion = result['emotion_info'].get('primary_emotion', {})
+                    emotion_name = emotion.get('name', '未知')
+                else:
+                    emotion_name = '未识别'
+                
                 confidence = result['confidence']
                 logger.info(f"   场景{i}: {emotion_name} (置信度: {confidence:.2f})")
+                
+                # 保存生成的内容
+                if 'generated_content' in result and result['generated_content']:
+                    self._save_generated_content(i, result['generated_content'], result['scenario'])
         
         logger.info("🎯 演示模式自动结束")
+        logger.info("📁 生成的内容已保存到 outputs/ 目录，可以查看音视频文件")
+        
+        # 显示保存的文件列表
+        outputs_dir = get_project_root() / "outputs"
+        if outputs_dir.exists():
+            files = list(outputs_dir.glob("*"))
+            if files:
+                logger.info("📂 已生成文件:")
+                for file in sorted(files)[-6:]:  # 显示最新的6个文件
+                    logger.info(f"   {file.name}")
     
     async def stop(self):
         """停止系统"""
@@ -540,6 +597,167 @@ class QMFinal3System:
                 layer.shutdown()
         
         logger.info("系统已停止")
+    
+    def _save_generated_content(self, scenario_id: int, content: Dict[str, Any], scenario_text: str):
+        """保存生成的音视频内容"""
+        try:
+            # 创建输出目录
+            outputs_dir = get_project_root() / "outputs"
+            outputs_dir.mkdir(exist_ok=True)
+            
+            # 创建时间戳
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            # 保存音频内容
+            if 'audio' in content or 'audio_array' in content:
+                self._save_audio_content(outputs_dir, scenario_id, content, timestamp)
+            
+            # 保存视频内容  
+            if 'video' in content or 'frames' in content:
+                self._save_video_content(outputs_dir, scenario_id, content, timestamp)
+            
+            # 保存分析报告
+            self._save_analysis_report(outputs_dir, scenario_id, content, scenario_text, timestamp)
+            
+        except Exception as e:
+            logger.error(f"保存内容失败: {e}")
+    
+    def _save_audio_content(self, outputs_dir: Path, scenario_id: int, content: Dict[str, Any], timestamp: str):
+        """保存音频内容"""
+        try:
+            # 获取音频数据
+            audio_data = None
+            sample_rate = 44100
+            
+            if 'audio' in content:
+                audio_info = content['audio']
+                audio_data = audio_info.get('audio_array')
+                sample_rate = audio_info.get('sample_rate', 44100)
+            elif 'audio_array' in content:
+                audio_data = content['audio_array']
+            
+            if audio_data is not None:
+                # 转换为numpy数组
+                if not isinstance(audio_data, np.ndarray):
+                    audio_data = np.array(audio_data)
+                
+                # 归一化到[-1, 1]范围
+                if audio_data.dtype != np.float32:
+                    audio_data = audio_data.astype(np.float32)
+                if np.max(np.abs(audio_data)) > 1.0:
+                    audio_data = audio_data / np.max(np.abs(audio_data))
+                
+                # 保存为WAV文件
+                audio_file = outputs_dir / f"scenario_{scenario_id}_{timestamp}_audio.wav"
+                
+                # 简单的WAV文件保存（如果有scipy可用）
+                try:
+                    from scipy.io import wavfile
+                    # 转换为16位整数
+                    audio_int16 = (audio_data * 32767).astype(np.int16)
+                    wavfile.write(str(audio_file), sample_rate, audio_int16)
+                    logger.info(f"💾 音频已保存: {audio_file.name}")
+                except ImportError:
+                    # 如果没有scipy，保存为numpy文件
+                    audio_file = outputs_dir / f"scenario_{scenario_id}_{timestamp}_audio.npy"
+                    np.save(str(audio_file), audio_data)
+                    logger.info(f"💾 音频数据已保存: {audio_file.name} (需要scipy.io.wavfile播放)")
+                
+        except Exception as e:
+            logger.error(f"保存音频失败: {e}")
+    
+    def _save_video_content(self, outputs_dir: Path, scenario_id: int, content: Dict[str, Any], timestamp: str):
+        """保存视频内容"""
+        try:
+            # 获取视频帧
+            frames = None
+            
+            if 'video' in content:
+                video_info = content['video']
+                frames = video_info.get('frames', [])
+            elif 'frames' in content:
+                frames = content['frames']
+            
+            if frames and len(frames) > 0:
+                # 保存前几帧作为图片
+                max_frames_to_save = min(5, len(frames))
+                
+                for i, frame in enumerate(frames[:max_frames_to_save]):
+                    if isinstance(frame, np.ndarray):
+                        # 保存为PNG图片
+                        try:
+                            from PIL import Image
+                            # 确保frame是正确的格式
+                            if frame.dtype != np.uint8:
+                                frame = (frame * 255).astype(np.uint8)
+                            
+                            img = Image.fromarray(frame)
+                            img_file = outputs_dir / f"scenario_{scenario_id}_{timestamp}_frame_{i:03d}.png"
+                            img.save(str(img_file))
+                            
+                            if i == 0:
+                                logger.info(f"🖼️  视频帧已保存: {img_file.name} (共{len(frames)}帧)")
+                        except ImportError:
+                            # 如果没有PIL，保存为numpy文件
+                            frame_file = outputs_dir / f"scenario_{scenario_id}_{timestamp}_frame_{i:03d}.npy"
+                            np.save(str(frame_file), frame)
+                            
+                            if i == 0:
+                                logger.info(f"🖼️  视频帧数据已保存: {frame_file.name} (需要PIL查看)")
+                
+        except Exception as e:
+            logger.error(f"保存视频失败: {e}")
+    
+    def _save_analysis_report(self, outputs_dir: Path, scenario_id: int, content: Dict[str, Any], scenario_text: str, timestamp: str):
+        """保存分析报告"""
+        try:
+            report = {
+                "scenario_id": scenario_id,
+                "scenario_text": scenario_text,
+                "timestamp": timestamp,
+                "analysis": {
+                    "audio_info": {},
+                    "video_info": {},
+                    "content_summary": {}
+                }
+            }
+            
+            # 音频信息
+            if 'audio' in content:
+                audio_info = content['audio']
+                report["analysis"]["audio_info"] = {
+                    "sample_rate": audio_info.get('sample_rate', 'unknown'),
+                    "channels": audio_info.get('channels', 'unknown'),
+                    "duration": audio_info.get('duration', 'unknown'),
+                    "format": audio_info.get('format', 'unknown')
+                }
+            
+            # 视频信息
+            if 'video' in content:
+                video_info = content['video']
+                report["analysis"]["video_info"] = {
+                    "fps": video_info.get('fps', 'unknown'),
+                    "resolution": video_info.get('resolution', 'unknown'),
+                    "total_frames": video_info.get('total_frames', 'unknown'),
+                    "duration": video_info.get('duration', 'unknown')
+                }
+            
+            # 内容摘要
+            report["analysis"]["content_summary"] = {
+                "has_audio": 'audio' in content or 'audio_array' in content,
+                "has_video": 'video' in content or 'frames' in content,
+                "content_keys": list(content.keys())
+            }
+            
+            # 保存报告
+            report_file = outputs_dir / f"scenario_{scenario_id}_{timestamp}_analysis.json"
+            with open(report_file, 'w', encoding='utf-8') as f:
+                json.dump(report, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"📋 分析报告已保存: {report_file.name}")
+            
+        except Exception as e:
+            logger.error(f"保存分析报告失败: {e}")
     
     def get_system_status(self) -> Dict[str, Any]:
         """获取系统状态"""

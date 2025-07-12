@@ -230,11 +230,15 @@ class LayerPipeline:
         
         try:
             current_data = initial_data
+            self.layer_results = []  # 重置层结果
             
             for i, layer in enumerate(self.layers):
                 self.logger.debug(f"处理第 {i+1}/{self.layer_count} 层: {layer.layer_name}")
                 
                 current_data = await layer.process(current_data)
+                
+                # 保存层结果
+                self.layer_results.append(current_data)
                 
                 # 检查是否有错误
                 if "error" in current_data.data:
@@ -287,6 +291,7 @@ class LayerPipeline:
         return {
             "pipeline_stats": self.pipeline_stats,
             "layer_count": self.layer_count,
+            "last_layer_results_count": len(getattr(self, 'layer_results', [])),
             "layer_statuses": layer_statuses,
             "total_avg_time_ms": self.pipeline_stats["avg_total_time"],
             "success_rate": (
