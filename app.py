@@ -18,6 +18,13 @@ import logging
 import base64
 from io import BytesIO
 
+# 公共链接功能
+try:
+    from pyngrok import ngrok
+    NGROK_AVAILABLE = True
+except ImportError:
+    NGROK_AVAILABLE = False
+
 # 添加项目根目录到Python路径
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -140,6 +147,22 @@ if 'processing' not in st.session_state:
     st.session_state.processing = False
 if 'result' not in st.session_state:
     st.session_state.result = None
+if 'public_url' not in st.session_state:
+    st.session_state.public_url = None
+
+# 创建公共访问链接
+def create_public_url():
+    """创建公共访问链接"""
+    if NGROK_AVAILABLE and st.session_state.public_url is None:
+        try:
+            # 创建ngrok隧道
+            public_url = ngrok.connect(8502)
+            st.session_state.public_url = public_url
+            return public_url
+        except Exception as e:
+            st.warning(f"创建公共链接失败: {e}")
+            return None
+    return st.session_state.public_url
 
 def init_system():
     """初始化系统"""
@@ -309,6 +332,15 @@ def main():
     # 标题
     st.markdown('<h1 class="title">🌙 睡眠疗愈AI</h1>', unsafe_allow_html=True)
     st.markdown('<p style="text-align: center; font-size: 1.2rem; color: #666;">基于情绪识别的三阶段音乐叙事疗愈系统</p>', unsafe_allow_html=True)
+    
+    # 显示公共访问链接
+    if NGROK_AVAILABLE:
+        public_url = create_public_url()
+        if public_url:
+            st.success(f"🌐 **公共访问链接**: {public_url}")
+            st.info("💡 您可以将此链接分享给任何人，他们都能访问您的睡眠疗愈AI系统！")
+    else:
+        st.warning("💡 安装 pyngrok 可获得公共访问链接: `pip install pyngrok`")
     
     # 初始化系统
     if not init_system():
