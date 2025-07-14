@@ -1,0 +1,20 @@
+{
+  "session_id": "test_session_003",
+  "user_id": "user_003",
+  "timestamp": "2025-07-13T08:18:23.192313",
+  "music_preference": 3,
+  "video_preference": 4,
+  "overall_experience": 3,
+  "relaxation_level": 3,
+  "stress_reduction": 2,
+  "sleep_readiness": 3,
+  "liked_aspects": [],
+  "disliked_aspects": [
+    "音乐太慢",
+    "时间太长",
+    "效果不明显"
+  ],
+  "suggestions": "需要更有效的放松技术",
+  "physical_comfort": 4,
+  "mental_calm": 3
+}

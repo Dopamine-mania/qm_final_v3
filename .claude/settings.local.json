@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__graphiti-memory__search_memory_nodes",
+      "mcp__graphiti-memory__search_memory_facts",
+      "mcp__graphiti-memory__add_memory",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}

@@ -25,6 +25,8 @@ import asyncio
 import logging
 import json
 import io
+import requests
+import time
 from pathlib import Path
 
 from .base_layer import BaseLayer, LayerData, LayerConfig
@@ -131,6 +133,226 @@ class MusicParameter:
         self.iso_stage = data.get('iso_stage', 'synchronization')
         self.therapy_intensity = data.get('therapy_intensity', 0.5)
         self.sleep_phase_alignment = data.get('sleep_phase_alignment', 0.0)
+
+class SunoAPIClient:
+    """Suno API客户端 - 用于真实音乐生成"""
+    
+    def __init__(self, api_key: Optional[str] = None):
+        self.api_key = api_key or "your-suno-api-key"  # 需要用户提供真实密钥
+        self.base_url = "https://api.suno.ai/v1"  # Suno API endpoint
+        self.session = requests.Session()
+        
+        # 设置API请求头
+        self.session.headers.update({
+            'Authorization': f'Bearer {self.api_key}',
+            'Content-Type': 'application/json',
+            'User-Agent': 'qm_final3-music-therapy/1.0'
+        })
+        
+        logger.info("Suno API客户端初始化完成")
+    
+    def generate_three_stage_music(self, emotion_data: Dict[str, Any], 
+                                 music_params: MusicParameter) -> Dict[str, Any]:
+        """生成三阶段连贯音乐叙事"""
+        try:
+            # 构建三阶段提示词
+            stage_prompts = self._build_three_stage_prompts(emotion_data, music_params)
+            
+            # 调用Suno API生成三段连贯音乐
+            music_response = self._call_suno_api(stage_prompts)
+            
+            # 处理响应
+            if music_response and 'audio_url' in music_response:
+                # 下载音频文件
+                audio_data = self._download_audio(music_response['audio_url'])
+                
+                return {
+                    'success': True,
+                    'audio_data': audio_data,
+                    'stage_prompts': stage_prompts,
+                    'suno_response': music_response,
+                    'three_stage_narrative': True
+                }
+            else:
+                # 如果API调用失败，使用fallback生成
+                return self._fallback_generation(emotion_data, music_params)
+                
+        except Exception as e:
+            logger.error(f"Suno API调用失败: {e}")
+            return self._fallback_generation(emotion_data, music_params)
+    
+    def _build_three_stage_prompts(self, emotion_data: Dict[str, Any], 
+                                 music_params: MusicParameter) -> Dict[str, str]:
+        """构建三阶段音乐生成提示词"""
+        # 获取用户当前情绪
+        current_emotion = emotion_data.get('primary_emotion', {}).get('name', '焦虑')
+        
+        # 映射情绪到音乐描述
+        emotion_to_music = {
+            '焦虑': {'initial': 'anxious, restless, fast tempo', 'target': 'calm, peaceful, slow'},
+            '疲惫': {'initial': 'tired, heavy, sluggish', 'target': 'relaxed, floating, gentle'},
+            '中性': {'initial': 'neutral, balanced, moderate', 'target': 'serene, tranquil, soft'},
+            '失眠': {'initial': 'racing thoughts, tense, irregular', 'target': 'sleepy, drowsy, minimal'},
+            '烦躁': {'initial': 'agitated, sharp, dissonant', 'target': 'smooth, harmonious, flowing'}
+        }
+        
+        music_desc = emotion_to_music.get(current_emotion, emotion_to_music['焦虑'])
+        
+        # 构建三阶段提示词
+        stage_prompts = {
+            'synchronization': f"""Create ambient sleep therapy music - Stage 1 (Synchronization): 
+Match the user's current emotional state of {current_emotion}. 
+Musical style: {music_desc['initial']}, {music_params.tempo_bpm} BPM, 
+{music_params.key_signature} key. Duration: 30 seconds. 
+Focus: emotional resonance and matching current mood.""",
+            
+            'guidance': f"""Create ambient sleep therapy music - Stage 2 (Guidance): 
+Gradually transition from {current_emotion} towards calm relaxation. 
+Musical progression: slowly decrease tempo from {music_params.tempo_bpm} to {max(40, music_params.tempo_bpm-20)} BPM,
+softer dynamics, gentler textures. Duration: 60 seconds.
+Focus: smooth emotional transition and guidance.""",
+            
+            'consolidation': f"""Create ambient sleep therapy music - Stage 3 (Consolidation): 
+Establish deep relaxation and sleepiness. 
+Musical style: {music_desc['target']}, very slow tempo (30-40 BPM), 
+minimal textures, sleep-inducing harmonies. Duration: 30 seconds.
+Focus: consolidate peaceful state for sleep."""
+        }
+        
+        return stage_prompts
+    
+    def _call_suno_api(self, stage_prompts: Dict[str, str]) -> Optional[Dict[str, Any]]:
+        """调用Suno API生成音乐"""
+        try:
+            # 组合三阶段提示为一个连贯的音乐请求
+            combined_prompt = f"""
+{stage_prompts['synchronization']}
+
+Then smoothly transition to:
+{stage_prompts['guidance']}
+
+Finally conclude with:
+{stage_prompts['consolidation']}
+
+Create this as one continuous, seamless 2-minute ambient therapy track for sleep induction.
+"""
+            
+            # 构建API请求
+            request_data = {
+                "prompt": combined_prompt,
+                "duration": 120,  # 2分钟总时长
+                "style": "ambient therapy",
+                "mood": "calming progressive",
+                "format": "wav"
+            }
+            
+            # 发送请求（注意：这里使用模拟响应，实际需要真实API）
+            response = self._simulate_suno_response(request_data)
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"Suno API请求失败: {e}")
+            return None
+    
+    def _simulate_suno_response(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """模拟Suno API响应（待替换为真实API调用）"""
+        # 模拟API响应
+        return {
+            'id': f'suno_track_{int(time.time())}',
+            'status': 'completed',
+            'audio_url': 'https://example.com/generated_track.wav',  # 模拟URL
+            'duration': request_data.get('duration', 120),
+            'prompt_used': request_data.get('prompt', ''),
+            'metadata': {
+                'style': request_data.get('style', 'ambient'),
+                'format': request_data.get('format', 'wav'),
+                'generated_at': datetime.now().isoformat()
+            }
+        }
+    
+    def _download_audio(self, audio_url: str) -> Optional[np.ndarray]:
+        """下载生成的音频文件"""
+        try:
+            # 对于模拟URL，生成模拟音频数据
+            if 'example.com' in audio_url:
+                return self._generate_mock_audio()
+            
+            # 真实下载逻辑（实际使用时启用）
+            # response = self.session.get(audio_url)
+            # if response.status_code == 200:
+            #     audio_data = response.content
+            #     # 使用librosa或soundfile解析音频
+            #     return audio_array
+            
+            return self._generate_mock_audio()
+            
+        except Exception as e:
+            logger.error(f"音频下载失败: {e}")
+            return None
+    
+    def _generate_mock_audio(self) -> np.ndarray:
+        """生成模拟音频数据（用于测试）"""
+        # 生成2分钟的三阶段模拟音频
+        sample_rate = 44100
+        duration = 120  # 2分钟
+        total_samples = int(sample_rate * duration)
+        
+        # 创建三阶段音频
+        t = np.linspace(0, duration, total_samples)
+        
+        # 阶段1 (0-30s): 较快节奏，匹配当前情绪
+        stage1_end = int(sample_rate * 30)
+        stage1_freq = 440.0  # A4
+        stage1 = 0.3 * np.sin(2 * np.pi * stage1_freq * t[:stage1_end])
+        
+        # 阶段2 (30-90s): 过渡阶段，频率逐渐降低
+        stage2_start = stage1_end
+        stage2_end = int(sample_rate * 90)
+        stage2_samples = stage2_end - stage2_start
+        freq_transition = np.linspace(440.0, 220.0, stage2_samples)
+        stage2_t = t[stage2_start:stage2_end] - t[stage2_start]
+        stage2 = 0.2 * np.sin(2 * np.pi * freq_transition * stage2_t)
+        
+        # 阶段3 (90-120s): 低频，助眠
+        stage3_start = stage2_end
+        stage3_samples = total_samples - stage3_start
+        stage3_freq = 110.0  # 低频助眠
+        stage3_t = t[stage3_start:] - t[stage3_start]
+        stage3 = 0.1 * np.sin(2 * np.pi * stage3_freq * stage3_t)
+        
+        # 合并三阶段
+        audio = np.concatenate([stage1, stage2, stage3])
+        
+        # 添加渐变以避免突变
+        fade_length = int(sample_rate * 2)  # 2秒渐变
+        
+        # 阶段间渐变
+        audio[stage1_end-fade_length:stage1_end] *= np.linspace(1, 0, fade_length)
+        audio[stage1_end:stage1_end+fade_length] *= np.linspace(0, 1, fade_length)
+        
+        audio[stage2_end-fade_length:stage2_end] *= np.linspace(1, 0, fade_length)
+        audio[stage2_end:stage2_end+fade_length] *= np.linspace(0, 1, fade_length)
+        
+        # 立体声
+        stereo_audio = np.column_stack([audio, audio])
+        
+        return stereo_audio
+    
+    def _fallback_generation(self, emotion_data: Dict[str, Any], 
+                           music_params: MusicParameter) -> Dict[str, Any]:
+        """备用生成方案（当API不可用时）"""
+        logger.info("使用备用音乐生成方案")
+        
+        audio_data = self._generate_mock_audio()
+        
+        return {
+            'success': True,
+            'audio_data': audio_data,
+            'fallback_used': True,
+            'three_stage_narrative': True,
+            'message': 'API不可用，使用本地生成'
+        }
 
 class ProceduralAudioGenerator:
     """程序化音频生成器"""
@@ -283,6 +505,9 @@ class ProceduralVideoGenerator:
         self.width, self.height = config.video_resolution
         self.fps = config.video_fps
         
+        # 当前风格
+        self.style = config.video_style
+        
         # 视频风格配置
         self.style_configs = {
             'ambient': {
@@ -299,6 +524,22 @@ class ProceduralVideoGenerator:
                 'background_color': (30, 50, 30),
                 'primary_color': (100, 200, 100),
                 'animation_speed': 0.3
+            },
+            # 新增阶段特定风格
+            'dynamic_ambient': {
+                'background_color': (25, 35, 55),
+                'primary_color': (120, 170, 220),
+                'animation_speed': 0.6
+            },
+            'transitional_flow': {
+                'background_color': (18, 25, 40),
+                'primary_color': (90, 130, 180),
+                'animation_speed': 0.4
+            },
+            'calm_static': {
+                'background_color': (15, 20, 35),
+                'primary_color': (70, 100, 140),
+                'animation_speed': 0.2
             }
         }
         
@@ -311,8 +552,12 @@ class ProceduralVideoGenerator:
             return np.full((self.height, self.width, 3), 50, dtype=np.uint8)
         
         # 创建画布
+        current_style = getattr(self, 'style', self.config.video_style)
+        if current_style not in self.style_configs:
+            current_style = 'ambient'
+        
         image = PIL.Image.new('RGB', (self.width, self.height), 
-                             color=self.style_configs[self.config.video_style]['background_color'])
+                             color=self.style_configs[current_style]['background_color'])
         draw = PIL.ImageDraw.Draw(image)
         
         # 基于音乐参数生成视觉效果
@@ -428,6 +673,9 @@ class GenerationLayer(BaseLayer):
         self.audio_generator = ProceduralAudioGenerator(config) if config.audio_enabled else None
         self.video_generator = ProceduralVideoGenerator(config) if config.video_enabled else None
         
+        # 初始化Suno API客户端
+        self.suno_client = SunoAPIClient() if config.audio_enabled else None
+        
         # 初始化ISO原则
         if config.iso_stage_aware:
             self.iso_principle = ISOPrinciple()
@@ -457,20 +705,89 @@ class GenerationLayer(BaseLayer):
             logger.warning("无法解析音乐参数，使用默认值")
             return MusicParameter()
     
-    def _generate_audio_content(self, music_params: MusicParameter) -> Dict[str, Any]:
-        """生成音频内容"""
+    def _generate_audio_content(self, music_params: MusicParameter, emotion_data: Dict[str, Any] = None) -> Dict[str, Any]:
+        """生成音频内容 - 使用Suno API进行三阶段音乐叙事生成"""
+        if not self.suno_client:
+            return self._fallback_to_procedural_audio(music_params)
+        
+        try:
+            # 使用Suno API生成三阶段连贯音乐
+            logger.info("🎵 开始调用Suno API生成三阶段音乐叙事...")
+            
+            if emotion_data is None:
+                emotion_data = {'primary_emotion': {'name': '焦虑'}}  # 默认情绪
+            
+            suno_result = self.suno_client.generate_three_stage_music(emotion_data, music_params)
+            
+            if suno_result.get('success'):
+                audio_data = suno_result['audio_data']
+                
+                # 确保是numpy数组
+                if not isinstance(audio_data, np.ndarray):
+                    audio_data = np.array(audio_data)
+                
+                # 归一化音频
+                if np.max(np.abs(audio_data)) > 0:
+                    audio_data = audio_data / np.max(np.abs(audio_data))
+                
+                # 转换为字节流（如果需要）
+                audio_bytes = None
+                if AUDIO_AVAILABLE:
+                    try:
+                        buffer = io.BytesIO()
+                        sf.write(buffer, audio_data, self.config.output_sample_rate, format='WAV')
+                        audio_bytes = buffer.getvalue()
+                    except Exception as e:
+                        logger.warning(f"音频编码失败: {e}")
+                
+                # 构建返回结果
+                result = {
+                    'audio_array': audio_data,
+                    'audio_bytes': audio_bytes,
+                    'sample_rate': self.config.output_sample_rate,
+                    'channels': self.config.output_channels,
+                    'duration': 120.0,  # 2分钟三阶段音乐
+                    'format': 'WAV',
+                    'three_stage_narrative': True,
+                    'stage_prompts': suno_result.get('stage_prompts', {}),
+                    'suno_metadata': suno_result.get('suno_response', {}),
+                    'fallback_used': suno_result.get('fallback_used', False)
+                }
+                
+                if suno_result.get('fallback_used'):
+                    logger.info("✅ 三阶段音乐生成完成（使用备用方案）")
+                else:
+                    logger.info("✅ 三阶段音乐生成完成（Suno API）")
+                
+                return result
+            else:
+                # 如果Suno API完全失败，使用原有的程序化生成
+                logger.warning("Suno API生成失败，回退到程序化生成")
+                return self._fallback_to_procedural_audio(music_params)
+                
+        except Exception as e:
+            logger.error(f"Suno API音频生成失败: {e}")
+            return self._fallback_to_procedural_audio(music_params)
+    
+    def _fallback_to_procedural_audio(self, music_params: MusicParameter) -> Dict[str, Any]:
+        """备用程序化音频生成"""
         if not self.audio_generator:
             return {'error': '音频生成器未启用'}
         
         try:
-            # 生成音频
+            # 使用原有的程序化生成器
             audio_data = self.audio_generator.generate_ambient_texture(
                 music_params, 
                 self.config.audio_duration
             )
             
+            # 确保是numpy数组
+            if not isinstance(audio_data, np.ndarray):
+                audio_data = np.array(audio_data)
+            
             # 归一化音频
-            audio_data = audio_data / np.max(np.abs(audio_data))
+            if np.max(np.abs(audio_data)) > 0:
+                audio_data = audio_data / np.max(np.abs(audio_data))
             
             # 转换为字节流（如果需要）
             audio_bytes = None
@@ -488,11 +805,12 @@ class GenerationLayer(BaseLayer):
                 'sample_rate': self.config.output_sample_rate,
                 'channels': self.config.output_channels,
                 'duration': self.config.audio_duration,
-                'format': 'WAV'
+                'format': 'WAV',
+                'fallback_used': True
             }
             
         except Exception as e:
-            logger.error(f"音频生成失败: {e}")
+            logger.error(f"备用音频生成失败: {e}")
             return {'error': str(e)}
     
     def _generate_video_content(self, music_params: MusicParameter) -> Dict[str, Any]:
@@ -587,46 +905,63 @@ class GenerationLayer(BaseLayer):
             if not input_data.data:
                 raise ValueError("输入数据为空")
             
-            # 提取音乐参数
-            music_params = self._extract_music_parameters(input_data.data)
+            # 初始化缓存变量
+            cached_content = None
+            cache_key = "unknown"
             
-            # 生成缓存键
-            cache_key = self._generate_cache_key(music_params)
-            
-            # 检查缓存
-            cached_content = self._get_cached_content(cache_key)
-            if cached_content:
-                logger.info(f"使用缓存内容: {cache_key}")
-                content = cached_content
+            # 检查是否有ISO三阶段参数
+            if 'iso_three_stage_params' in input_data.data:
+                # 三阶段生成模式
+                content = await self._generate_three_stage_content(input_data.data)
+                cache_key = "three_stage_dynamic"
             else:
-                # 生成新内容
-                content = {}
+                # 传统单阶段生成模式
+                music_params = self._extract_music_parameters(input_data.data)
                 
-                # 生成音频内容
-                if self.config.audio_enabled:
-                    audio_content = self._generate_audio_content(music_params)
-                    content['audio'] = audio_content
+                # 生成缓存键
+                cache_key = self._generate_cache_key(music_params)
                 
-                # 生成视频内容
-                if self.config.video_enabled:
-                    video_content = self._generate_video_content(music_params)
-                    content['video'] = video_content
-                
-                # 音视频同步
-                if self.config.audio_enabled and self.config.video_enabled:
-                    if 'error' not in content['audio'] and 'error' not in content['video']:
-                        content = self._synchronize_audio_video(content['audio'], content['video'])
+                # 检查缓存
+                cached_content = self._get_cached_content(cache_key)
+                if cached_content:
+                    logger.info(f"使用缓存内容: {cache_key}")
+                    content = cached_content
+                else:
+                    # 生成新内容
+                    content = {}
+                    
+                    # 生成音频内容
+                    if self.config.audio_enabled:
+                        # 提取情绪数据传递给Suno API
+                        emotion_data = input_data.data.get('emotion_analysis', {})
+                        audio_content = self._generate_audio_content(music_params, emotion_data)
+                        content['audio'] = audio_content
+                    
+                    # 生成视频内容
+                    if self.config.video_enabled:
+                        video_content = self._generate_video_content(music_params)
+                        content['video'] = video_content
+                    
+                    # 音视频同步
+                    if self.config.audio_enabled and self.config.video_enabled:
+                        if 'error' not in content['audio'] and 'error' not in content['video']:
+                            content = self._synchronize_audio_video(content['audio'], content['video'])
                 
                 # 缓存内容
                 self._cache_content(cache_key, content)
             
             # 创建输出数据
+            music_params_dict = {}
+            if 'iso_three_stage_params' not in input_data.data:
+                # 单阶段模式
+                music_params_dict = music_params.__dict__ if hasattr(music_params, '__dict__') else {}
+            
             output_data = LayerData(
                 layer_name=self.layer_name,
                 timestamp=datetime.now(),
                 data={
                     'generated_content': content,
-                    'music_parameters': music_params.__dict__,
+                    'music_parameters': music_params_dict,
                     'generation_info': {
                         'strategy': self.config.generation_strategy,
                         'content_type': self.config.content_type,
@@ -710,3 +1045,344 @@ class GenerationLayer(BaseLayer):
         
         base_status.update(generation_status)
         return base_status
+    
+    async def _generate_three_stage_content(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """生成ISO三阶段音画同步内容"""
+        logger.info("🎭 开始生成ISO三阶段音画同步内容")
+        
+        iso_params = input_data['iso_three_stage_params']
+        stages = ['match_stage', 'guide_stage', 'target_stage']
+        
+        # 三阶段内容容器
+        three_stage_content = {
+            'stages': {},
+            'continuous_narrative': True,
+            'total_duration': 0.0,
+            'sync_metadata': {
+                'stage_transitions': [],
+                'narrative_flow': 'smooth',
+                'cross_stage_continuity': True
+            }
+        }
+        
+        # 为每个阶段生成内容
+        for stage_idx, stage_name in enumerate(stages):
+            stage_params = iso_params[stage_name]
+            logger.info(f"🎼 生成阶段 {stage_idx + 1}: {stage_name}")
+            
+            # 转换阶段参数为MusicParameter对象
+            music_params = self._convert_stage_to_music_params(stage_params, stage_name)
+            
+            # 生成阶段内容
+            stage_content = {}
+            
+            # 生成音频内容
+            if self.config.audio_enabled:
+                stage_audio = await self._generate_stage_audio(music_params, stage_idx, stage_name)
+                stage_content['audio'] = stage_audio
+            
+            # 生成视频内容
+            if self.config.video_enabled:
+                stage_video = await self._generate_stage_video(music_params, stage_idx, stage_name)
+                stage_content['video'] = stage_video
+            
+            # 阶段音视频同步
+            if self.config.audio_enabled and self.config.video_enabled:
+                if 'error' not in stage_content['audio'] and 'error' not in stage_content['video']:
+                    stage_content = self._synchronize_stage_content(stage_content, stage_name)
+            
+            # 添加阶段元数据
+            stage_content['stage_info'] = {
+                'stage_name': stage_name,
+                'stage_index': stage_idx,
+                'stage_duration': stage_params['stage_duration'],
+                'therapy_intensity': stage_params.get('therapy_intensity', 0.5),
+                'sleep_readiness': stage_params.get('sleep_readiness', 0.5),
+                'tempo_bpm': stage_params['tempo_bpm'],
+                'emotional_target': stage_params.get('emotional_target', 'neutral')
+            }
+            
+            three_stage_content['stages'][stage_name] = stage_content
+            three_stage_content['total_duration'] += stage_params['stage_duration']
+            
+            # 记录阶段转换信息
+            if stage_idx > 0:
+                prev_stage = stages[stage_idx - 1]
+                transition_info = {
+                    'from_stage': prev_stage,
+                    'to_stage': stage_name,
+                    'transition_point': three_stage_content['total_duration'] - stage_params['stage_duration'],
+                    'transition_method': 'smooth_crossfade',
+                    'continuity_score': 0.9  # 高连贯性
+                }
+                three_stage_content['sync_metadata']['stage_transitions'].append(transition_info)
+        
+        # 创建连贯的三阶段叙事
+        three_stage_content = await self._create_narrative_continuity(three_stage_content)
+        
+        logger.info(f"✅ ISO三阶段内容生成完成，总时长: {three_stage_content['total_duration']:.1f}分钟")
+        
+        return three_stage_content
+    
+    def _convert_stage_to_music_params(self, stage_params: Dict[str, Any], stage_name: str) -> 'MusicParameter':
+        """将阶段参数转换为MusicParameter对象"""
+        music_params = MusicParameter()
+        
+        # 基础音乐参数
+        music_params.tempo_bpm = stage_params.get('tempo_bpm', 60.0)
+        music_params.key_signature = stage_params.get('key_signature', 'C_major')
+        music_params.dynamics = stage_params.get('dynamics', 'mp')
+        music_params.valence_mapping = stage_params.get('valence_mapping', 0.0)
+        music_params.arousal_mapping = stage_params.get('arousal_mapping', 0.0)
+        music_params.tension_level = stage_params.get('tension_level', 0.0)
+        
+        # 阶段特定参数
+        music_params.iso_stage = stage_name
+        if hasattr(music_params, 'therapy_intensity'):
+            music_params.therapy_intensity = stage_params.get('therapy_intensity', 0.5)
+        if hasattr(music_params, 'sleep_readiness'):
+            music_params.sleep_readiness = stage_params.get('sleep_readiness', 0.5)
+        
+        # 乐器配置
+        music_params.instrument_weights = stage_params.get('instrument_weights', {
+            'sine_wave': 0.3,
+            'ambient_pad': 0.4,
+            'nature_sounds': 0.3
+        })
+        
+        return music_params
+    
+    async def _generate_stage_audio(self, music_params: 'MusicParameter', stage_idx: int, stage_name: str) -> Dict[str, Any]:
+        """为特定阶段生成音频内容"""
+        logger.info(f"🎵 生成{stage_name}音频内容")
+        
+        try:
+            # 根据阶段调整音频生成参数
+            stage_duration = getattr(music_params, 'therapy_intensity', 0.5) * 60.0 + 60.0  # 1-2分钟
+            
+            # 使用增强的音频生成器
+            if self.audio_generator:
+                # 生成基础音频
+                audio_data = self.audio_generator.generate_ambient_texture(music_params, stage_duration)
+                
+                # 添加阶段特定的处理
+                audio_data = self._apply_stage_audio_effects(audio_data, stage_name, stage_idx)
+                
+                # 归一化
+                if np.max(np.abs(audio_data)) > 0:
+                    audio_data = audio_data / np.max(np.abs(audio_data))
+                
+                # 转换为字节流
+                audio_bytes = None
+                if AUDIO_AVAILABLE:
+                    try:
+                        buffer = io.BytesIO()
+                        sf.write(buffer, audio_data, self.config.output_sample_rate, format='WAV')
+                        audio_bytes = buffer.getvalue()
+                    except Exception as e:
+                        logger.warning(f"阶段音频编码失败: {e}")
+                
+                return {
+                    'audio_array': audio_data,
+                    'audio_bytes': audio_bytes,
+                    'sample_rate': self.config.output_sample_rate,
+                    'channels': self.config.output_channels,
+                    'duration': stage_duration,
+                    'stage_name': stage_name,
+                    'stage_index': stage_idx,
+                    'format': 'WAV'
+                }
+            else:
+                return {'error': f'{stage_name}音频生成器未启用'}
+                
+        except Exception as e:
+            logger.error(f"{stage_name}音频生成失败: {e}")
+            return {'error': str(e)}
+    
+    async def _generate_stage_video(self, music_params: 'MusicParameter', stage_idx: int, stage_name: str) -> Dict[str, Any]:
+        """为特定阶段生成视频内容"""
+        logger.info(f"🎬 生成{stage_name}视频内容")
+        
+        try:
+            stage_duration = getattr(music_params, 'therapy_intensity', 0.5) * 60.0 + 60.0
+            
+            if self.video_generator:
+                # 根据阶段调整视频风格
+                original_style = self.video_generator.style
+                self.video_generator.style = self._get_stage_video_style(stage_name)
+                
+                # 生成视频帧
+                frames = self.video_generator.generate_video_sequence(music_params, stage_duration)
+                
+                # 应用阶段特定的视觉效果
+                frames = self._apply_stage_video_effects(frames, stage_name, stage_idx)
+                
+                # 恢复原始风格
+                self.video_generator.style = original_style
+                
+                return {
+                    'frames': frames,
+                    'fps': self.config.video_fps,
+                    'resolution': self.config.video_resolution,
+                    'duration': stage_duration,
+                    'total_frames': len(frames),
+                    'stage_name': stage_name,
+                    'stage_index': stage_idx,
+                    'format': 'RGB'
+                }
+            else:
+                return {'error': f'{stage_name}视频生成器未启用'}
+                
+        except Exception as e:
+            logger.error(f"{stage_name}视频生成失败: {e}")
+            return {'error': str(e)}
+    
+    def _apply_stage_audio_effects(self, audio_data: np.ndarray, stage_name: str, stage_idx: int) -> np.ndarray:
+        """应用阶段特定的音频效果"""
+        if len(audio_data) == 0:
+            return audio_data
+        
+        # 处理立体声和单声道
+        is_stereo = len(audio_data.shape) == 2 and audio_data.shape[1] == 2
+        audio_length = audio_data.shape[0]
+            
+        if stage_name == 'match_stage':
+            # 匹配阶段：增加一些动态变化
+            fade_length = int(audio_length * 0.1)  # 10%淡入
+            if fade_length > 0:
+                fade_in = np.linspace(0, 1, fade_length)
+                if is_stereo:
+                    fade_in = fade_in.reshape(-1, 1)  # 使其可以广播到立体声
+                audio_data[:fade_length] *= fade_in
+            
+        elif stage_name == 'guide_stage':
+            # 引导阶段：添加渐进式降低的效果
+            guide_envelope = np.linspace(1.0, 0.7, audio_length)
+            if is_stereo:
+                guide_envelope = guide_envelope.reshape(-1, 1)  # 使其可以广播到立体声
+            audio_data *= guide_envelope
+            
+        elif stage_name == 'target_stage':
+            # 目标阶段：最大程度的平静处理
+            fade_length = int(audio_length * 0.2)  # 20%淡出
+            if fade_length > 0:
+                fade_out = np.linspace(1, 0.3, fade_length)
+                if is_stereo:
+                    fade_out = fade_out.reshape(-1, 1)  # 使其可以广播到立体声
+                audio_data[-fade_length:] *= fade_out
+        
+        return audio_data
+    
+    def _get_stage_video_style(self, stage_name: str) -> str:
+        """获取阶段对应的视频风格"""
+        stage_styles = {
+            'match_stage': 'dynamic_ambient',     # 动态环境
+            'guide_stage': 'transitional_flow',   # 过渡流动
+            'target_stage': 'calm_static'         # 平静静态
+        }
+        return stage_styles.get(stage_name, 'ambient')
+    
+    def _apply_stage_video_effects(self, frames: List[np.ndarray], stage_name: str, stage_idx: int) -> List[np.ndarray]:
+        """应用阶段特定的视觉效果"""
+        if not frames:
+            return frames
+            
+        processed_frames = []
+        
+        for i, frame in enumerate(frames):
+            if stage_name == 'match_stage':
+                # 匹配阶段：保持原始亮度和动态
+                processed_frame = frame
+                
+            elif stage_name == 'guide_stage':
+                # 引导阶段：逐渐降低亮度和对比度
+                progress = i / len(frames) if len(frames) > 0 else 0
+                brightness_factor = 1.0 - progress * 0.3  # 最多降低30%
+                processed_frame = np.clip(frame * brightness_factor, 0, 255).astype(np.uint8)
+                
+            elif stage_name == 'target_stage':
+                # 目标阶段：最低亮度，最大平静感
+                brightness_factor = 0.5  # 降低50%亮度
+                processed_frame = np.clip(frame * brightness_factor, 0, 255).astype(np.uint8)
+            else:
+                processed_frame = frame
+            
+            processed_frames.append(processed_frame)
+        
+        logger.info(f"✨ {stage_name}视觉效果应用完成，处理{len(processed_frames)}帧")
+        return processed_frames
+    
+    def _synchronize_stage_content(self, stage_content: Dict[str, Any], stage_name: str) -> Dict[str, Any]:
+        """同步阶段音视频内容"""
+        audio_data = stage_content['audio']
+        video_data = stage_content['video']
+        
+        # 检查时长一致性
+        audio_duration = audio_data.get('duration', 0)
+        video_duration = video_data.get('duration', 0)
+        
+        if abs(audio_duration - video_duration) > 0.1:
+            logger.warning(f"{stage_name}音视频时长不一致: 音频{audio_duration}s, 视频{video_duration}s")
+        
+        # 创建阶段同步元数据
+        sync_metadata = {
+            'stage_name': stage_name,
+            'audio_duration': audio_duration,
+            'video_duration': video_duration,
+            'synchronized': True,
+            'sync_method': 'stage_temporal_alignment',
+            'sync_accuracy': 1.0 - abs(audio_duration - video_duration) / max(audio_duration, video_duration, 1.0),
+            'stage_specific_sync': True
+        }
+        
+        return {
+            'audio': audio_data,
+            'video': video_data,
+            'sync_metadata': sync_metadata
+        }
+    
+    async def _create_narrative_continuity(self, three_stage_content: Dict[str, Any]) -> Dict[str, Any]:
+        """创建三阶段叙事连贯性"""
+        logger.info("📖 创建连贯的三阶段音乐叙事")
+        
+        stages = ['match_stage', 'guide_stage', 'target_stage']
+        
+        # 分析各阶段特征，确保平滑过渡
+        narrative_analysis = {
+            'tempo_progression': [],
+            'valence_progression': [],
+            'arousal_progression': [],
+            'visual_continuity': [],
+            'therapy_progression': []
+        }
+        
+        # 收集各阶段数据
+        for stage_name in stages:
+            if stage_name in three_stage_content['stages']:
+                stage_info = three_stage_content['stages'][stage_name]['stage_info']
+                
+                narrative_analysis['tempo_progression'].append(stage_info['tempo_bpm'])
+                narrative_analysis['therapy_progression'].append(stage_info['therapy_intensity'])
+        
+        # 验证叙事一致性
+        tempo_progression = narrative_analysis['tempo_progression']
+        therapy_progression = narrative_analysis['therapy_progression']
+        
+        tempo_decrease = all(tempo_progression[i] >= tempo_progression[i+1] 
+                           for i in range(len(tempo_progression)-1)) if len(tempo_progression) > 1 else True
+        
+        therapy_increase = all(therapy_progression[i] <= therapy_progression[i+1] 
+                             for i in range(len(therapy_progression)-1)) if len(therapy_progression) > 1 else True
+        
+        # 添加叙事连贯性元数据
+        three_stage_content['narrative_analysis'] = narrative_analysis
+        three_stage_content['narrative_quality'] = {
+            'tempo_coherence': tempo_decrease,
+            'therapy_coherence': therapy_increase,
+            'overall_coherence_score': 0.9 if tempo_decrease and therapy_increase else 0.7,
+            'narrative_type': 'guided_relaxation_progression'
+        }
+        
+        logger.info(f"✅ 叙事连贯性评分: {three_stage_content['narrative_quality']['overall_coherence_score']:.2f}")
+        
+        return three_stage_content

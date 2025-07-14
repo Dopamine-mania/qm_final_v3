@@ -1,0 +1,20 @@
+{
+  "session_id": "test_session_001",
+  "user_id": "user_001",
+  "timestamp": "2025-07-13T08:18:23.190764",
+  "music_preference": 8,
+  "video_preference": 7,
+  "overall_experience": 8,
+  "relaxation_level": 9,
+  "stress_reduction": 8,
+  "sleep_readiness": 9,
+  "liked_aspects": [
+    "音乐节奏",
+    "视觉效果",
+    "渐进式放松"
+  ],
+  "disliked_aspects": [],
+  "suggestions": "音乐很棒，希望能有更多自然声音",
+  "physical_comfort": 8,
+  "mental_calm": 9
+}

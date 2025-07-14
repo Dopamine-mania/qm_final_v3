@@ -656,6 +656,196 @@ class InputLayer(BaseLayer):
         self.data_buffer.add_text(text)
         logger.debug(f"添加文本输入: {text[:50]}...")
     
+    # 根据用户规范添加的标准化接口函数
+    def capture_video_frame(self) -> np.ndarray:
+        """摄像头数据捕获模拟
+        
+        Returns:
+            np.ndarray: 视频帧数据，形状为(height, width, channels)
+        """
+        try:
+            if self.config.video_enabled and self.video_processor and self.video_processor.is_capturing:
+                frame = self.video_processor.read_frame()
+                if frame is not None:
+                    return frame
+            
+            # 返回模拟视频帧数据
+            height, width = self.config.video_height, self.config.video_width
+            mock_frame = np.random.randint(0, 255, (height, width, 3), dtype=np.uint8)
+            logger.debug("返回模拟视频帧数据")
+            return mock_frame
+            
+        except Exception as e:
+            logger.warning(f"视频帧捕获失败，返回模拟数据: {e}")
+            # 返回默认模拟帧
+            height, width = self.config.video_height, self.config.video_width
+            return np.zeros((height, width, 3), dtype=np.uint8)
+    
+    def capture_audio_chunk(self) -> np.ndarray:
+        """麦克风数据捕获模拟
+        
+        Returns:
+            np.ndarray: 音频数据块，一维数组
+        """
+        try:
+            if self.config.audio_enabled and self.audio_processor and self.audio_processor.is_recording:
+                audio_chunk = self.audio_processor.read_audio_chunk()
+                if audio_chunk is not None:
+                    return audio_chunk
+            
+            # 返回模拟音频数据
+            chunk_size = self.config.audio_chunk_size
+            mock_audio = np.random.normal(0, 0.1, chunk_size).astype(np.float32)
+            logger.debug("返回模拟音频数据")
+            return mock_audio
+            
+        except Exception as e:
+            logger.warning(f"音频数据捕获失败，返回模拟数据: {e}")
+            # 返回静音数据
+            chunk_size = self.config.audio_chunk_size
+            return np.zeros(chunk_size, dtype=np.float32)
+    
+    def get_user_text_input(self) -> str:
+        """文本输入模拟
+        
+        Returns:
+            str: 用户文本输入
+        """
+        try:
+            # 从缓冲区获取最新的文本输入
+            with self.data_buffer.buffer_lock:
+                if self.data_buffer.text_buffer:
+                    latest_text = self.data_buffer.text_buffer[-1]['data']
+                    logger.debug(f"返回缓冲区文本: {latest_text[:50]}...")
+                    return latest_text
+            
+            # 返回模拟文本输入
+            mock_texts = [
+                "我感到有些焦虑，需要放松一下",
+                "今天很累，希望能快点入睡",
+                "心情不太好，想要安静的环境",
+                "压力很大，需要缓解一下",
+                "睡眠质量不好，想改善"
+            ]
+            import random
+            mock_text = random.choice(mock_texts)
+            logger.debug(f"返回模拟文本输入: {mock_text}")
+            return mock_text
+            
+        except Exception as e:
+            logger.warning(f"文本输入获取失败，返回默认文本: {e}")
+            return "用户情绪输入模拟"
+    
+    def collect_multimodal_data(self) -> Dict[str, Any]:
+        """多模态数据收集主函数
+        
+        整合视频、音频、文本三种模态的数据收集
+        
+        Returns:
+            Dict[str, Any]: 包含所有模态数据的字典
+        """
+        try:
+            collected_data = {}
+            collection_timestamp = datetime.now()
+            
+            # 收集视频数据
+            if self.config.video_enabled:
+                video_frame = self.capture_video_frame()
+                processed_video = self.video_processor.process_frame(video_frame) if self.video_processor else None
+                collected_data['video'] = {
+                    'raw_frame': video_frame,
+                    'processed': processed_video,
+                    'enabled': True
+                }
+            else:
+                collected_data['video'] = {
+                    'raw_frame': None,
+                    'processed': None,
+                    'enabled': False
+                }
+            
+            # 收集音频数据
+            if self.config.audio_enabled:
+                audio_chunk = self.capture_audio_chunk()
+                processed_audio = self.audio_processor.process_audio(audio_chunk) if self.audio_processor else None
+                collected_data['audio'] = {
+                    'raw_chunk': audio_chunk,
+                    'processed': processed_audio,
+                    'enabled': True
+                }
+            else:
+                collected_data['audio'] = {
+                    'raw_chunk': None,
+                    'processed': None,
+                    'enabled': False
+                }
+            
+            # 收集文本数据
+            if self.config.text_enabled:
+                text_input = self.get_user_text_input()
+                processed_text = self.text_processor.process_text(text_input)
+                collected_data['text'] = {
+                    'raw_text': text_input,
+                    'processed': processed_text,
+                    'enabled': True
+                }
+            else:
+                collected_data['text'] = {
+                    'raw_text': None,
+                    'processed': None,
+                    'enabled': False
+                }
+            
+            # 添加元数据
+            collected_data['metadata'] = {
+                'collection_timestamp': collection_timestamp,
+                'enabled_modalities': {
+                    'video': self.config.video_enabled,
+                    'audio': self.config.audio_enabled,
+                    'text': self.config.text_enabled
+                },
+                'collection_mode': 'multimodal_capture',
+                'data_quality': self._calculate_multimodal_quality(collected_data)
+            }
+            
+            logger.debug("多模态数据收集完成")
+            return collected_data
+            
+        except Exception as e:
+            logger.error(f"多模态数据收集失败: {e}")
+            raise
+    
+    def _calculate_multimodal_quality(self, collected_data: Dict[str, Any]) -> float:
+        """计算多模态数据质量
+        
+        Args:
+            collected_data: 收集到的多模态数据
+            
+        Returns:
+            float: 数据质量评分 (0-1)
+        """
+        quality_scores = []
+        
+        # 视频质量评估
+        if collected_data['video']['enabled'] and collected_data['video']['processed']:
+            video_quality = collected_data['video']['processed']['face_features']['frame_quality']
+            quality_scores.append(video_quality)
+        
+        # 音频质量评估
+        if collected_data['audio']['enabled'] and collected_data['audio']['processed']:
+            audio_rms = collected_data['audio']['processed']['rms_energy']
+            audio_quality = min(1.0, audio_rms * 10)  # 简单的质量评估
+            quality_scores.append(audio_quality)
+        
+        # 文本质量评估
+        if collected_data['text']['enabled'] and collected_data['text']['processed']:
+            text_length = collected_data['text']['processed']['length']
+            text_quality = min(1.0, text_length / 50.0)
+            quality_scores.append(text_quality)
+        
+        # 返回平均质量分数
+        return np.mean(quality_scores) if quality_scores else 0.0
+    
     def shutdown(self):
         """关闭输入层"""
         self.shutdown_event.set()
