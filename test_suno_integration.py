@@ -27,6 +27,7 @@ async def test_suno_integration():
     
     # 创建生成层配置
     config = GenerationLayerConfig(
+        layer_name="test_generation_layer",
         audio_enabled=True,
         video_enabled=False,  # 先只测试音频
         audio_duration=120.0,  # 2分钟
@@ -118,6 +119,7 @@ async def test_multiple_emotions():
     
     # 创建生成层
     config = GenerationLayerConfig(
+        layer_name="multi_emotion_test_layer",
         audio_enabled=True,
         video_enabled=False,
         audio_duration=60.0  # 缩短到1分钟加快测试
