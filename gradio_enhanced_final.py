@@ -133,18 +133,20 @@ def get_emotion_music_features(emotion):
     return features_database.get(emotion, features_database["焦虑"])
 
 def generate_suno_prompt(emotion, music_features):
-    """基于三阶段音乐特征生成Suno API提示词"""
-    matching = music_features["匹配阶段"]
-    guiding = music_features["引导阶段"]
-    target = music_features["目标阶段"]
+    """基于三阶段音乐特征生成Suno API提示词（简化版）"""
+    # 简化prompt避免"Topic too long"错误
+    emotion_map = {
+        "焦虑": "anxiety relief",
+        "疲惫": "fatigue healing", 
+        "烦躁": "irritation calming",
+        "平静": "peaceful enhancement",
+        "压力": "stress reduction"
+    }
     
-    prompt = f"""Therapeutic sleep music for {emotion} relief following ISO principle three-stage healing journey.
-
-Stage 1 - Matching Phase: {matching['tempo']}, {matching['key']} key, {matching['dynamics']}, {matching['mood']}
-Stage 2 - Guiding Phase: {guiding['tempo']}, {guiding['key']}, {guiding['dynamics']}, {guiding['mood']}
-Stage 3 - Target Phase: {target['tempo']}, {target['key']}, {target['dynamics']}, {target['mood']}
-
-Create one continuous instrumental piece with seamless transitions between the three stages. Ambient, healing, no vocals, smooth emotional flow from current state to deep sleep relaxation."""
+    emotion_en = emotion_map.get(emotion, "sleep therapy")
+    
+    # 简短有效的prompt
+    prompt = f"Ambient instrumental music for {emotion_en}, three-stage therapy progression, calming sleep meditation"
     
     return prompt
 
@@ -477,17 +479,40 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
             audio_source = "本地增强算法"
         
         # 3. 保存到临时文件
+        print(f"🔍 音频数组形状: {audio_array.shape}, 采样率: {sample_rate}")
+        
         with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
             try:
                 import soundfile as sf
                 sf.write(tmp_file.name, audio_array, sample_rate)
                 audio_file = tmp_file.name
+                print(f"✅ 使用soundfile保存音频: {audio_file}")
             except ImportError:
-                # 如果没有soundfile，用scipy
-                from scipy.io import wavfile
-                audio_int = (audio_array * 32767).astype(np.int16)
-                wavfile.write(tmp_file.name, sample_rate, audio_int)
-                audio_file = tmp_file.name
+                print("⚠️ soundfile不可用，尝试使用scipy...")
+                try:
+                    from scipy.io import wavfile
+                    audio_int = (audio_array * 32767).astype(np.int16)
+                    wavfile.write(tmp_file.name, sample_rate, audio_int)
+                    audio_file = tmp_file.name
+                    print(f"✅ 使用scipy保存音频: {audio_file}")
+                except Exception as e:
+                    print(f"❌ scipy保存失败: {e}")
+                    # 最后的备选方案：使用numpy直接保存
+                    import numpy as np
+                    np.save(tmp_file.name.replace('.wav', '.npy'), audio_array)
+                    audio_file = tmp_file.name.replace('.wav', '.npy')
+                    print(f"⚠️ 使用numpy保存: {audio_file}")
+            except Exception as e:
+                print(f"❌ soundfile保存失败: {e}")
+                try:
+                    from scipy.io import wavfile
+                    audio_int = (audio_array * 32767).astype(np.int16)
+                    wavfile.write(tmp_file.name, sample_rate, audio_int)
+                    audio_file = tmp_file.name
+                    print(f"✅ 降级到scipy保存: {audio_file}")
+                except Exception as e2:
+                    print(f"❌ 所有保存方法失败: {e2}")
+                    return f"❌ 音频保存失败: {e2}", None, "保存失败"
         
         processing_time = time.time() - start_time
         
