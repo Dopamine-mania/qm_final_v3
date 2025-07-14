@@ -7,7 +7,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "mcp__zen__thinkdeep"
+      "mcp__zen__thinkdeep",
+      "Bash(rm:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }
