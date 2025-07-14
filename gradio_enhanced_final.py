@@ -133,22 +133,20 @@ def get_emotion_music_features(emotion):
     return features_database.get(emotion, features_database["焦虑"])
 
 def generate_suno_prompt(emotion, music_features):
-    """基于三阶段音乐特征生成Suno API提示词（简化版）"""
-    # 简化prompt避免"Topic too long"错误
+    """按照官方示例格式生成极简API提示词"""
+    # 完全按照官方示例：简单英文单词
     emotion_map = {
-        "焦虑": "anxiety relief",
-        "疲惫": "fatigue healing", 
-        "烦躁": "irritation calming",
-        "平静": "peaceful enhancement",
-        "压力": "stress reduction"
+        "焦虑": "calm sleep",
+        "疲惫": "rest therapy", 
+        "烦躁": "peace music",
+        "平静": "deep relax",
+        "压力": "stress relief"
     }
     
-    emotion_en = emotion_map.get(emotion, "sleep therapy")
+    # 极简格式，避免所有中文和复杂描述
+    simple_prompt = emotion_map.get(emotion, "sleep music")
     
-    # 简短有效的prompt
-    prompt = f"Ambient instrumental music for {emotion_en}, three-stage therapy progression, calming sleep meditation"
-    
-    return prompt
+    return simple_prompt
 
 def check_api_call_limit():
     """检查API调用限制"""
@@ -196,12 +194,18 @@ def call_suno_api(emotion, music_features, enable_real_api=False):
         
         # API调用
         conn = http.client.HTTPSConnection(BASE_URL)
+        # 完全按照官方示例格式，使用极简英文
         payload = json.dumps({
-            "gpt_description_prompt": prompt,
-            "make_instrumental": True,  # 纯音乐
-            "mv": "chirp-v3-0",  # 最便宜的模型，性价比第一
-            "prompt": f"Three-stage therapy music for {emotion}"
+            "gpt_description_prompt": prompt,  # 已经是极简英文
+            "make_instrumental": True,
+            "mv": "chirp-v3-0",
+            "prompt": prompt  # 使用相同的极简prompt
         })
+        
+        # 调试：显示payload大小
+        payload_size = len(payload.encode('utf-8'))
+        print(f"🔍 Payload大小: {payload_size} bytes")
+        print(f"🔍 Payload内容: {payload}")
         
         headers = {
             'Accept': 'application/json',
@@ -478,41 +482,42 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
             )
             audio_source = "本地增强算法"
         
-        # 3. 保存到临时文件
+        # 3. 保存到临时文件（增强版）
         print(f"🔍 音频数组形状: {audio_array.shape}, 采样率: {sample_rate}")
+        print(f"🔍 音频数组类型: {type(audio_array)}, 数据类型: {audio_array.dtype}")
         
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+        try:
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+                audio_file = tmp_file.name
+                print(f"🔍 临时文件路径: {audio_file}")
+            
+            # 尝试保存音频
             try:
                 import soundfile as sf
-                sf.write(tmp_file.name, audio_array, sample_rate)
-                audio_file = tmp_file.name
-                print(f"✅ 使用soundfile保存音频: {audio_file}")
+                sf.write(audio_file, audio_array, sample_rate)
+                print(f"✅ soundfile保存成功: {audio_file}")
             except ImportError:
-                print("⚠️ soundfile不可用，尝试使用scipy...")
-                try:
-                    from scipy.io import wavfile
-                    audio_int = (audio_array * 32767).astype(np.int16)
-                    wavfile.write(tmp_file.name, sample_rate, audio_int)
-                    audio_file = tmp_file.name
-                    print(f"✅ 使用scipy保存音频: {audio_file}")
-                except Exception as e:
-                    print(f"❌ scipy保存失败: {e}")
-                    # 最后的备选方案：使用numpy直接保存
-                    import numpy as np
-                    np.save(tmp_file.name.replace('.wav', '.npy'), audio_array)
-                    audio_file = tmp_file.name.replace('.wav', '.npy')
-                    print(f"⚠️ 使用numpy保存: {audio_file}")
-            except Exception as e:
-                print(f"❌ soundfile保存失败: {e}")
-                try:
-                    from scipy.io import wavfile
-                    audio_int = (audio_array * 32767).astype(np.int16)
-                    wavfile.write(tmp_file.name, sample_rate, audio_int)
-                    audio_file = tmp_file.name
-                    print(f"✅ 降级到scipy保存: {audio_file}")
-                except Exception as e2:
-                    print(f"❌ 所有保存方法失败: {e2}")
-                    return f"❌ 音频保存失败: {e2}", None, "保存失败"
+                print("⚠️ soundfile不可用，使用scipy...")
+                from scipy.io import wavfile
+                audio_int = (audio_array * 32767).astype(np.int16)
+                wavfile.write(audio_file, sample_rate, audio_int)
+                print(f"✅ scipy保存成功: {audio_file}")
+            
+            # 验证文件存在性和大小
+            import os
+            if os.path.exists(audio_file):
+                file_size = os.path.getsize(audio_file)
+                print(f"✅ 文件验证成功: {audio_file} ({file_size} bytes)")
+                if file_size == 0:
+                    raise Exception("音频文件大小为0")
+            else:
+                raise Exception(f"音频文件不存在: {audio_file}")
+                
+        except Exception as e:
+            print(f"❌ 音频保存失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return f"❌ 音频保存失败: {e}", None, "保存失败"
         
         processing_time = time.time() - start_time
         
@@ -573,6 +578,11 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
    • API集成: 真实AI音乐生成能力
 
 🌙 现在请戴上耳机，体验真正的流畅过渡疗愈效果！"""
+        
+        # 最终验证和返回
+        import os
+        print(f"🔍 返回的audio_file: {audio_file}")
+        print(f"🔍 文件是否存在: {os.path.exists(audio_file) if 'audio_file' in locals() else 'audio_file未定义'}")
         
         return report, audio_file, f"成功生成{detected_emotion}疗愈音频 - {audio_source}"
         
