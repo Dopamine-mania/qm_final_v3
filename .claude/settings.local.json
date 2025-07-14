@@ -11,7 +11,12 @@
       "Bash(rm:*)",
       "Bash(ls:*)",
       "Bash(git rm:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(python:*)",
+      "mcp__graphiti-memory__get_episodes",
+      "Bash(pip install:*)",
+      "Bash(timeout:*)"
     ],
     "deny": []
   }

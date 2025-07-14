@@ -75,6 +75,47 @@ res = conn.getresponse()
 data = res.read()
 print(data.decode("utf-8"))
 
+
+
+查询接口：
+1.批量获取：
+import http.client
+import json
+
+conn = http.client.HTTPSConnection("feiai.chat")
+payload = json.dumps({
+   "ids": [
+      "b4914cbe-f738-4813-8ac9-4194ae362bed",
+      "ccb61d4a-701d-4ef2-b23c-c3ff950fc3b5",
+      "276677a3-bd50-4388-83c9-39ce18f7041f"
+   ]
+})
+headers = {
+   'Accept': 'application/json',
+   'Content-Type': 'application/json'
+}
+conn.request("POST", "/suno/fetch", payload, headers)
+res = conn.getresponse()
+data = res.read()
+print(data.decode("utf-8"))
+
+2.查询单个任务：import http.client
+import json
+
+conn = http.client.HTTPSConnection("feiai.chat")
+payload = ''
+headers = {
+   'Accept': 'application/json',
+   'Content-Type': 'application/json'
+}
+conn.request("GET", "/suno/fetch/137f929c-08ed-4c24-b58f-e415981b7e73", payload, headers)
+res = conn.getresponse()
+data = res.read()
+print(data.decode("utf-8"))
+
+
+
+
 --------------------------------
 我自己的api的key：
 sk-sSxgx9y9kFOdio1I63qm8aSG1XhhHIOk9Yy2chKNnEvq0jq1

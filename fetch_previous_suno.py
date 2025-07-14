@@ -30,8 +30,8 @@ def fetch_suno_result(task_id):
             'Authorization': f'Bearer {API_KEY}'
         }
         
-        # 查询任务状态
-        conn.request("GET", f"/suno/fetch?task_id={task_id}", headers=headers)
+        # 查询任务状态 (修复: 使用REST风格端点)
+        conn.request("GET", f"/suno/fetch/{task_id}", headers=headers)
         res = conn.getresponse()
         data = res.read()
         

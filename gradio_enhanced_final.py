@@ -189,8 +189,8 @@ def fetch_suno_result(task_id, max_wait_time=60):
                 'Authorization': f'Bearer {API_KEY}'
             }
             
-            # 查询任务状态
-            conn.request("GET", f"/suno/fetch?task_id={task_id}", headers=headers)
+            # 查询任务状态 (修复: 使用REST风格端点)
+            conn.request("GET", f"/suno/fetch/{task_id}", headers=headers)
             res = conn.getresponse()
             data = res.read()
             
@@ -272,7 +272,7 @@ def call_suno_api(emotion, music_features, enable_real_api=False):
         payload = json.dumps({
             "gpt_description_prompt": prompt,  # 已经是极简英文
             "make_instrumental": True,
-            "mv": "chirp-v3-0",
+            "mv": "chirp-v3-0",  # 使用最便宜的v3模型
             "prompt": prompt  # 使用相同的极简prompt
         })
         
@@ -706,6 +706,45 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
         traceback.print_exc()
         return error_msg, None, "生成失败"
 
+def load_previous_suno_music():
+    """加载之前成功生成的Suno音乐"""
+    audio_file_path = "/Users/wanxinchen/Study/AI/Project/Final project/SuperClaude/qm_final3/previous_suno_fdd1b90b.mp3"
+    
+    if os.path.exists(audio_file_path):
+        report = f"""🎵 成功加载之前的Suno AI音乐！
+
+🎼 音乐信息:
+   • 标题: "Whisper of the Moon"
+   • 时长: 约2分44秒 (164秒)
+   • 模型: Chirp-v4 (Suno最新模型)
+   • 风格: 宁静睡眠音乐
+   • 标签: sleep, soft, acoustic, soothing
+   
+🎹 音乐特色:
+   • 指弹吉他与温柔钢琴和弦
+   • 环境弦乐的微妙嗡鸣声
+   • 多层次柔和音响
+   • 专为睡前放松设计
+   
+🌙 疗愈效果:
+   • 深度放松: acoustic fingerpicking营造安全感
+   • 情绪稳定: 温和的钢琴和弦带来平静
+   • 助眠引导: 环境音效帮助大脑放松
+   • 持续疗愈: 2分44秒完整的放松体验
+   
+🎧 使用建议:
+   • 佩戴耳机获得最佳立体声效果
+   • 调至舒适音量 (建议50-70%)
+   • 在安静环境中聆听
+   • 闭眼跟随音乐进入放松状态
+   
+✨ 这是真实的Suno AI生成音乐，展示了AI音乐疗愈的实际效果！
+🌟 任务ID: fdd1b90b-47e2-44ca-a3b9-8b7ff83554dc"""
+        
+        return report, audio_file_path, "✅ 成功加载之前的Suno音乐"
+    else:
+        return "❌ 未找到之前的音乐文件", None, "❌ 文件不存在"
+
 def create_therapy_interface():
     """创建疗愈界面"""
     # 自定义CSS样式
@@ -736,11 +775,7 @@ def create_therapy_interface():
     }
     """
     
-    with gr.Blocks(
-        title="🌙 增强三阶段疗愈系统",
-        theme=gr.themes.Soft(primary_hue="purple", secondary_hue="blue"),
-        css=css
-    ) as app:
+    with gr.Blocks(title="🌙 增强三阶段疗愈系统") as app:
         
         # 标题区域
         gr.HTML("""
@@ -809,6 +844,13 @@ def create_therapy_interface():
                     info="如果有之前的任务ID，可以直接获取结果，避免重新消耗API"
                 )
                 
+                # 快速播放已有音乐
+                with gr.Row():
+                    load_previous_btn = gr.Button(
+                        "🎵 播放之前成功生成的Suno音乐",
+                        variant="secondary"
+                    )
+                
                 # 生成按钮
                 generate_btn = gr.Button(
                     "🌊 开始增强三阶段疗愈",
@@ -833,7 +875,8 @@ def create_therapy_interface():
                         <div style="font-size: 12px; margin-top: 5px;">
                             • <strong>测试模式</strong>：安全模拟，无费用<br>
                             • <strong>真实模式</strong>：消耗API费用，需谨慎<br>
-                            • <strong>成本控制</strong>：每日最多3次调用
+                            • <strong>成本控制</strong>：每日最多3次调用<br>
+                            • <strong>🎵 快速体验</strong>：点击按钮播放之前成功生成的真实AI音乐！
                         </div>
                     </div>
                 </div>
@@ -917,6 +960,12 @@ def create_therapy_interface():
             inputs=[emotion_input, duration_slider, use_suno, enable_real_api, existing_task_input],
             outputs=[info_output, audio_output, status_output]
         )
+        
+        load_previous_btn.click(
+            load_previous_suno_music,
+            inputs=[],
+            outputs=[info_output, audio_output, status_output]
+        )
     
     return app
 
@@ -931,9 +980,7 @@ def main():
     app.launch(
         server_name="0.0.0.0",
         server_port=7869,
-        share=True,
-        debug=False,
-        show_error=True
+        share=True
     )
 
 if __name__ == "__main__":
