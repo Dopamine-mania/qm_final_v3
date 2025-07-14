@@ -183,34 +183,65 @@ def fetch_suno_result(task_id, max_wait_time=60):
         try:
             conn = http.client.HTTPSConnection(BASE_URL)
             
+            # 添加请求头
+            headers = {
+                'Accept': 'application/json',
+                'Authorization': f'Bearer {API_KEY}'
+            }
+            
             # 查询任务状态
-            conn.request("GET", f"/suno/fetch?task_id={task_id}")
+            conn.request("GET", f"/suno/fetch?task_id={task_id}", headers=headers)
             res = conn.getresponse()
             data = res.read()
             
+            print(f"🔍 查询API响应状态: {res.status}")
+            print(f"🔍 查询API响应数据: {data.decode('utf-8')[:200]}...")
+            
             if res.status == 200:
-                result = json.loads(data.decode("utf-8"))
-                print(f"🔍 任务状态查询结果: {result}")
+                # 检查响应是否为空
+                if not data or len(data.strip()) == 0:
+                    print("⚠️ API返回空响应")
+                    time.sleep(5)
+                    continue
                 
-                # 检查任务状态
-                if result.get('code') == 'success' and result.get('data'):
-                    task_data = result.get('data')
-                    if isinstance(task_data, dict):
-                        status = task_data.get('status')
-                        if status == 'SUCCESS':
-                            print(f"✅ 音乐生成完成！")
-                            return result
-                        elif status in ['NOT_START', 'SUBMITTED', 'QUEUED', 'IN_PROGRESS']:
-                            print(f"⏳ 任务进行中: {status}")
+                try:
+                    result = json.loads(data.decode("utf-8"))
+                    print(f"🔍 任务状态查询结果: {result}")
+                    
+                    # 检查任务状态
+                    if result.get('code') == 'success' and result.get('data'):
+                        task_data = result.get('data')
+                        if isinstance(task_data, dict):
+                            status = task_data.get('status')
+                            if status == 'SUCCESS':
+                                print(f"✅ 音乐生成完成！")
+                                return result
+                            elif status in ['NOT_START', 'SUBMITTED', 'QUEUED', 'IN_PROGRESS']:
+                                print(f"⏳ 任务进行中: {status}")
+                            else:
+                                print(f"❌ 任务失败: {status}")
+                                return None
                         else:
-                            print(f"❌ 任务失败: {status}")
-                            return None
+                            print(f"⚠️ 任务数据格式异常: {type(task_data)}")
+                    else:
+                        print(f"⚠️ API响应格式异常: code={result.get('code')}, data存在={bool(result.get('data'))}")
+                        
+                except json.JSONDecodeError as je:
+                    print(f"❌ JSON解析失败: {je}")
+                    print(f"   原始数据: {data.decode('utf-8')}")
+                    
+            else:
+                print(f"❌ API请求失败，状态码: {res.status}")
+                print(f"   响应内容: {data.decode('utf-8')}")
             
             # 等待5秒后重试
+            print(f"⏳ 等待5秒后重试... (尝试 {attempt + 1}/{max_wait_time // 5})")
             time.sleep(5)
             
         except Exception as e:
             print(f"⚠️ 查询任务状态出错: {e}")
+            import traceback
+            traceback.print_exc()
             time.sleep(5)
     
     print(f"⏰ 任务查询超时 ({max_wait_time}秒)")

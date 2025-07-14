@@ -24,8 +24,14 @@ def fetch_suno_result(task_id):
     try:
         conn = http.client.HTTPSConnection(BASE_URL)
         
+        # 添加请求头
+        headers = {
+            'Accept': 'application/json',
+            'Authorization': f'Bearer {API_KEY}'
+        }
+        
         # 查询任务状态
-        conn.request("GET", f"/suno/fetch?task_id={task_id}")
+        conn.request("GET", f"/suno/fetch?task_id={task_id}", headers=headers)
         res = conn.getresponse()
         data = res.read()
         
@@ -33,14 +39,27 @@ def fetch_suno_result(task_id):
         print(f"🔍 API响应数据: {data.decode('utf-8')}")
         
         if res.status == 200:
-            result = json.loads(data.decode("utf-8"))
-            return result
+            # 检查响应是否为空
+            if not data or len(data.strip()) == 0:
+                print("⚠️ API返回空响应")
+                return None
+            
+            try:
+                result = json.loads(data.decode("utf-8"))
+                return result
+            except json.JSONDecodeError as e:
+                print(f"❌ JSON解析失败: {e}")
+                print(f"   原始数据: {data.decode('utf-8')}")
+                return None
         else:
             print(f"❌ 查询失败，状态码: {res.status}")
+            print(f"   响应内容: {data.decode('utf-8')}")
             return None
             
     except Exception as e:
         print(f"⚠️ 查询任务状态出错: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def extract_audio_url(result):
