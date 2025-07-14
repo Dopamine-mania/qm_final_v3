@@ -9,7 +9,9 @@
       "Bash(git push:*)",
       "mcp__zen__thinkdeep",
       "Bash(rm:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git rm:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
