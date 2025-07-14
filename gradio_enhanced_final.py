@@ -457,7 +457,7 @@ def detect_emotion_enhanced(user_input):
     confidence = min(0.85 + max_score * 0.03, 0.95)
     return detected_emotion, confidence
 
-def process_therapy_request(user_input, duration, use_suno_api=False, enable_real_api=False):
+def process_therapy_request(user_input, duration, use_suno_api=False, enable_real_api=False, existing_task_id=""):
     """处理疗愈请求 - 端到端流程（增强Suno API支持）"""
     if not user_input or len(user_input.strip()) < 3:
         return "⚠️ 请输入至少3个字符描述您的情绪状态", None, "输入过短"
@@ -473,14 +473,28 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
             # 使用Suno API生成真实AI音乐
             music_features = get_emotion_music_features(detected_emotion)
             
-            # 严格成本控制检查
-            if enable_real_api:
-                print("🚨 警告：即将调用真实Suno API，将产生费用！")
-                print(f"💰 今日剩余调用次数: {MAX_DAILY_CALLS - daily_call_count}")
-                # 在Web界面中，用户已经通过勾选框确认了
-            
-            # 调用Suno API
-            suno_response = call_suno_api(detected_emotion, music_features, enable_real_api)
+            # 检查是否使用现有任务ID
+            if existing_task_id.strip():
+                print(f"🔄 使用现有任务ID获取音乐: {existing_task_id}")
+                suno_response = fetch_suno_result(existing_task_id.strip())
+                if not suno_response:
+                    print("❌ 无法获取现有任务结果，降级到本地生成")
+                    audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
+                        duration=duration, 
+                        emotion=detected_emotion
+                    )
+                    audio_source = "现有任务获取失败，本地生成"
+                else:
+                    print("✅ 成功获取现有任务结果")
+            else:
+                # 严格成本控制检查
+                if enable_real_api:
+                    print("🚨 警告：即将调用真实Suno API，将产生费用！")
+                    print(f"💰 今日剩余调用次数: {MAX_DAILY_CALLS - daily_call_count}")
+                    # 在Web界面中，用户已经通过勾选框确认了
+                
+                # 调用Suno API
+                suno_response = call_suno_api(detected_emotion, music_features, enable_real_api)
             
             # 安全检查API响应
             if not suno_response or not isinstance(suno_response, dict):
@@ -756,6 +770,14 @@ def create_therapy_interface():
                         info="⚠️ 需要消耗API费用！"
                     )
                 
+                # 现有任务ID输入（避免重复调用）
+                existing_task_input = gr.Textbox(
+                    label="🔄 使用现有任务ID（避免重复调用）",
+                    placeholder="例如: fdd1b90b-47e2-44ca-a3b9-8b7ff83554dc",
+                    value="",
+                    info="如果有之前的任务ID，可以直接获取结果，避免重新消耗API"
+                )
+                
                 # 生成按钮
                 generate_btn = gr.Button(
                     "🌊 开始增强三阶段疗愈",
@@ -861,7 +883,7 @@ def create_therapy_interface():
         
         generate_btn.click(
             process_therapy_request,
-            inputs=[emotion_input, duration_slider, use_suno, enable_real_api],
+            inputs=[emotion_input, duration_slider, use_suno, enable_real_api, existing_task_input],
             outputs=[info_output, audio_output, status_output]
         )
     
