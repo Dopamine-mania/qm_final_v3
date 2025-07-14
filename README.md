@@ -83,11 +83,14 @@ pip install -r requirements.txt
 # 🧪 先运行快速测试检查系统状态
 python quick_test.py
 
-# 🎬 运行音画同步修复版本 (最新)
-python gradio_fixed.py
+# 🎵 运行优化演示模式 (最新推荐)
+python gradio_demo_optimized.py
 
-# 🎵 运行标准Gradio版本
-python gradio_app.py
+# 🎬 运行简化演示版本
+python gradio_demo_simple.py
+
+# 🔧 运行音画同步修复版本
+python gradio_fixed.py
 ```
 
 #### 💻 命令行版本
@@ -113,15 +116,28 @@ python main.py --verbose
 python main.py --config configs/custom_config.yaml
 ```
 
-## 🎬 最新更新：音画同步修复版本
+## 🎵 最新更新：优化演示模式
 
-### 🔧 gradio_fixed.py
-专门解决音画同步问题的最新版本，提供：
+### 🚀 gradio_demo_optimized.py (最新推荐)
+支持双模式选择的智能演示版本：
 
-- **完整的音画同步视频**：输出MP4格式的同步疗愈视频
-- **直接数据提取**：绕过渲染层，直接从生成层获取数据
-- **三阶段叙事**：完整的ISO原则三阶段音乐疗愈
-- **详细调试信息**：完整的处理过程和错误追踪
+#### 🎵 **纯音乐模式**（推荐日常使用）
+- **处理时间**：3-5秒快速完成
+- **专注核心**：三阶段疗愈音乐
+- **适用场景**：日常使用、快速体验
+- **优势**：快速、高效、专注音乐疗愈
+
+#### 🎬 **音画结合模式**（演示展示）
+- **处理时间**：15-20秒完整体验
+- **完整功能**：音频+视觉双重疗愈
+- **适用场景**：演示展示、沉浸体验
+- **优势**：视听结合、完整展示
+
+### 📊 性能对比
+| 模式 | 处理时间 | 输出内容 | 适用场景 |
+|------|----------|----------|----------|
+| 纯音乐 | 3-5秒 | 三阶段疗愈音频 | 日常使用、快速体验 |
+| 音画结合 | 15-20秒 | 音频+同步视频 | 演示展示、完整体验 |
 
 ### 🧪 quick_test.py
 快速测试脚本，验证系统准备状态：
@@ -138,24 +154,27 @@ python main.py --config configs/custom_config.yaml
    python quick_test.py
    ```
 
-2. **运行修复版本**：
+2. **运行优化演示模式**：
    ```bash
-   python gradio_fixed.py
+   python gradio_demo_optimized.py
    ```
 
 3. **访问界面**：
-   - 本地访问：`http://localhost:7862`
+   - 本地访问：`http://localhost:7866`
    - 公共访问：Gradio会自动生成公共链接 (share=True)
 
 4. **使用功能**：
-   - 点击"🚀 初始化系统"
    - 输入情绪描述
-   - 点击"🎬 生成音画同步疗愈视频"
-   - 观看完整的三阶段叙事音画同步疗愈视频
+   - 选择输出模式：纯音乐 / 音画结合
+   - 调整音频时长（10-60秒）
+   - 点击"🎵 开始生成疗愈内容"
+   - 享受个性化的三阶段疗愈音乐
 
 ### 📖 详细文档
 
-- **修复版本说明**：见 [SYNC_VIDEO_FIX.md](SYNC_VIDEO_FIX.md)
+- **优化演示说明**：见 [OPTIMIZED_DEMO_GUIDE.md](OPTIMIZED_DEMO_GUIDE.md)
+- **音画同步修复**：见 [SYNC_VIDEO_FIX.md](SYNC_VIDEO_FIX.md)
+- **API配置指南**：见 [API_CONFIG_TEMPLATE.md](API_CONFIG_TEMPLATE.md)
 - **系统架构**：见下方技术特性部分
 
 ## 🔧 核心技术特性
@@ -249,13 +268,14 @@ python main.py --config configs/custom_config.yaml
 - [x] 三阶段音乐叙事实现
 - [x] 音画同步视频生成
 
-### 最新修复 🔄
+### 最新优化 🔄
 
-- [x] **音画同步问题修复** (gradio_fixed.py)
-- [x] **直接数据提取** (绕过渲染层)
-- [x] **完整视频合成** (ffmpeg + OpenCV)
-- [x] **详细调试信息** (完整错误追踪)
-- [x] **系统测试工具** (quick_test.py)
+- [x] **双模式选择** (gradio_demo_optimized.py)
+- [x] **纯音乐模式** (3-5秒快速生成)
+- [x] **音画结合模式** (15-20秒完整体验)
+- [x] **性能优化** (条件渲染、智能缓存)
+- [x] **用户体验优化** (模式选择、时长调节)
+- [x] **详细使用指南** (OPTIMIZED_DEMO_GUIDE.md)
 
 ### 优化中 📋
 
