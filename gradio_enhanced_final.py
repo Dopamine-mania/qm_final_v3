@@ -211,7 +211,18 @@ def call_suno_api(emotion, music_features, enable_real_api=False):
         res = conn.getresponse()
         data = res.read()
         
+        print(f"🔍 API响应状态: {res.status}")
+        print(f"🔍 API响应数据: {data.decode('utf-8')[:500]}...")  # 只显示前500字符
+        
+        if res.status != 200:
+            raise Exception(f"API调用失败，状态码: {res.status}")
+        
         response = json.loads(data.decode("utf-8"))
+        
+        # 验证响应格式
+        if not isinstance(response, dict):
+            raise Exception(f"API返回格式错误: {type(response)}")
+        
         daily_call_count += 1
         
         print(f"✅ Suno API调用成功！任务ID: {response.get('task_id', 'unknown')}")
@@ -410,7 +421,15 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
             # 调用Suno API
             suno_response = call_suno_api(detected_emotion, music_features, enable_real_api)
             
-            if suno_response.get('mock', False):
+            # 安全检查API响应
+            if not suno_response or not isinstance(suno_response, dict):
+                print("⚠️ API响应无效，使用本地生成")
+                audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
+                    duration=duration, 
+                    emotion=detected_emotion
+                )
+                audio_source = "API响应无效，本地生成"
+            elif suno_response.get('mock', False):
                 # 模拟模式 - 使用本地生成
                 audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
                     duration=duration, 
@@ -419,22 +438,36 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
                 audio_source = "Suno API模拟 + 本地增强算法"
             else:
                 # 真实API响应处理
-                audio_url = suno_response.get('data', {}).get('audio_url')
-                if audio_url:
-                    # 这里应该下载真实音频，暂时用本地生成替代
-                    print(f"🎵 Suno音频URL: {audio_url}")
+                try:
+                    data_section = suno_response.get('data', {})
+                    if isinstance(data_section, dict):
+                        audio_url = data_section.get('audio_url')
+                    else:
+                        audio_url = None
+                    
+                    if audio_url:
+                        # 这里应该下载真实音频，暂时用本地生成替代
+                        print(f"🎵 Suno音频URL: {audio_url}")
+                        audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
+                            duration=duration, 
+                            emotion=detected_emotion
+                        )
+                        audio_source = "真实Suno API生成"
+                    else:
+                        # API成功但无音频URL，降级到本地
+                        print("⚠️ API响应无音频URL，使用本地生成")
+                        audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
+                            duration=duration, 
+                            emotion=detected_emotion
+                        )
+                        audio_source = "API无音频，本地生成"
+                except Exception as e:
+                    print(f"⚠️ 处理API响应时出错: {e}")
                     audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
                         duration=duration, 
                         emotion=detected_emotion
                     )
-                    audio_source = "真实Suno API生成"
-                else:
-                    # API失败，降级到本地
-                    audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
-                        duration=duration, 
-                        emotion=detected_emotion
-                    )
-                    audio_source = "API失败，本地生成"
+                    audio_source = "API处理出错，本地生成"
         else:
             # 使用本地增强算法
             audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
