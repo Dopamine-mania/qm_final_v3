@@ -197,7 +197,7 @@ def call_suno_api(emotion, music_features, enable_real_api=False):
         payload = json.dumps({
             "gpt_description_prompt": prompt,
             "make_instrumental": True,  # 纯音乐
-            "mv": "chirp-v3-0",  # 最便宜的模型
+            "mv": "chirp-v3-0",  # 最便宜的模型，性价比第一
             "prompt": f"Three-stage therapy music for {emotion}"
         })
         
@@ -650,7 +650,7 @@ def create_therapy_interface():
                         </div>
                     </div>
                 </div>
-                """
+                """)
             
             with gr.Column(scale=2):
                 gr.Markdown("### 🎬 疗愈体验")
