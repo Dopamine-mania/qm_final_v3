@@ -118,10 +118,10 @@ def gradio_process_emotion(user_input):
     global system
     
     if not user_input or len(user_input.strip()) < 5:
-        return "⚠️ 请输入至少5个字符的情绪描述", None, "输入太短"
+        return "⚠️ 请输入至少5个字符的情绪描述", None, None, "输入太短"
     
     if not system:
-        return "❌ 请先点击'初始化系统'按钮", None, "系统未初始化"
+        return "❌ 请先点击'初始化系统'按钮", None, None, "系统未初始化"
     
     try:
         # 同步方式处理，避免asyncio问题
@@ -142,31 +142,95 @@ def gradio_process_emotion(user_input):
             if hasattr(input_layer, 'add_text_input'):
                 input_layer.add_text_input(user_input)
         
-        # 同步处理 - 先测试简单版本
-        emotion_info = f"✅ 接收到情绪描述: {user_input[:100]}..."
-        audio_info = "🎵 音频生成功能正在完善中..."
+        # 使用真正的后端系统处理
+        print(f"🔄 开始处理情绪输入: {user_input[:50]}...")
         
-        # 尝试简单的情绪分析
-        if "焦虑" in user_input or "紧张" in user_input:
-            emotion_info = "🧠 识别到焦虑情绪\n置信度: 85%"
-        elif "疲惫" in user_input or "累" in user_input:
-            emotion_info = "🧠 识别到疲惫情绪\n置信度: 80%"
-        elif "烦躁" in user_input or "烦" in user_input:
-            emotion_info = "🧠 识别到烦躁情绪\n置信度: 82%"
-        elif "平静" in user_input:
-            emotion_info = "🧠 识别到平静情绪\n置信度: 75%"
-        elif "压力" in user_input:
-            emotion_info = "🧠 识别到压力情绪\n置信度: 88%"
-        else:
-            emotion_info = "🧠 识别到复合情绪\n置信度: 70%"
+        # 通过真正的系统管道处理
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         
-        audio_info = "🎵 基于您的情绪状态生成三阶段音乐:\n阶段1: 同步匹配\n阶段2: 引导过渡\n阶段3: 巩固稳定"
-        
-        return emotion_info, None, audio_info
+        try:
+            result = loop.run_until_complete(system.pipeline.process(input_data))
+            
+            # 提取情绪识别结果
+            emotion_info = "🧠 情绪识别中..."
+            confidence = 0.0
+            audio_array = None
+            sample_rate = 44100
+            
+            # 从管道历史中获取情绪信息
+            if hasattr(system.pipeline, 'layer_results'):
+                for layer_result in system.pipeline.layer_results:
+                    if (hasattr(layer_result, 'data') and 
+                        'emotion_analysis' in layer_result.data):
+                        analysis = layer_result.data['emotion_analysis']
+                        primary_emotion = analysis.get('primary_emotion', {})
+                        emotion_name = primary_emotion.get('name', '未知')
+                        confidence = layer_result.confidence
+                        emotion_info = f"🧠 主要情绪: {emotion_name}\n置信度: {confidence:.1%}"
+                        print(f"✅ 情绪识别完成: {emotion_name}, 置信度: {confidence:.1%}")
+                        break
+            
+            # 查找生成的音频内容
+            audio_info = "🎵 正在生成三阶段音乐..."
+            
+            if hasattr(system.pipeline, 'layer_results'):
+                for layer_result in system.pipeline.layer_results:
+                    if (hasattr(layer_result, 'data') and 
+                        'generated_content' in layer_result.data):
+                        generated_content = layer_result.data['generated_content']
+                        audio_content = generated_content.get('audio', {})
+                        
+                        if audio_content and 'audio_array' in audio_content:
+                            duration = audio_content.get('duration', 0)
+                            sample_rate = audio_content.get('sample_rate', 44100)
+                            three_stage = audio_content.get('three_stage_narrative', False)
+                            
+                            # 获取音频数组
+                            audio_array = audio_content.get('audio_array')
+                            if audio_array is not None and isinstance(audio_array, np.ndarray):
+                                if audio_array.dtype != np.float32:
+                                    audio_array = audio_array.astype(np.float32)
+                                if np.max(np.abs(audio_array)) > 0:
+                                    audio_array = audio_array / np.max(np.abs(audio_array))
+                                
+                                audio_info = f"🎵 三阶段音乐生成完成!\n⏱️ 时长: {duration:.0f}秒\n🔊 采样率: {sample_rate}Hz\n📖 三阶段叙事: {'✅' if three_stage else '❌'}"
+                                
+                                # 显示阶段信息
+                                stage_prompts = audio_content.get('stage_prompts', {})
+                                if stage_prompts:
+                                    audio_info += "\n\n🎼 音乐阶段设计:"
+                                    for stage, prompt in stage_prompts.items():
+                                        audio_info += f"\n• {stage}: {prompt[:100]}..."
+                                
+                                print(f"✅ 音频生成完成: {duration:.0f}秒, {sample_rate}Hz")
+                                break
+                        else:
+                            # 如果没有真正的音频，显示错误信息
+                            if 'error' in audio_content:
+                                audio_info = f"❌ 音频生成失败: {audio_content['error']}"
+                            else:
+                                audio_info = "⚠️ 音频生成中，请稍候..."
+                        break
+            
+            # 返回结果 (emotion_result, audio_output, video_output, audio_info)
+            if audio_array is not None:
+                return emotion_info, (sample_rate, audio_array), None, audio_info
+            else:
+                return emotion_info, None, None, audio_info
+                
+        except Exception as e:
+            print(f"❌ 处理过程中出现错误: {e}")
+            import traceback
+            traceback.print_exc()
+            return f"❌ 处理失败: {str(e)}", None, None, f"错误详情: {traceback.format_exc()}"
+        finally:
+            loop.close()
         
     except Exception as e:
         import traceback
-        return f"❌ 处理错误: {str(e)}", None, f"错误详情: {traceback.format_exc()}"
+        return f"❌ 处理错误: {str(e)}", None, None, f"错误详情: {traceback.format_exc()}"
 
 # 预设情绪选项
 emotion_presets = {
@@ -256,10 +320,16 @@ def create_interface():
                     type="numpy"
                 )
                 
+                # 生成的视频（如果有）
+                video_output = gr.Video(
+                    label="🖼️ 疗愈视觉内容",
+                    visible=True
+                )
+                
                 # 音频信息
                 audio_info = gr.Textbox(
-                    label="📊 音频信息",
-                    lines=4,
+                    label="📊 音频/视频信息",
+                    lines=6,
                     interactive=False
                 )
         
@@ -295,7 +365,7 @@ def create_interface():
         process_btn.click(
             gradio_process_emotion,
             inputs=emotion_input,
-            outputs=[emotion_result, audio_output, audio_info]
+            outputs=[emotion_result, audio_output, video_output, audio_info]
         )
     
     return app
