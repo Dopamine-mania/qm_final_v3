@@ -1,0 +1,128 @@
+# 🔑 API配置模板文件
+# 复制此文件为 api_config.yaml 并填入真实的API密钥
+
+# Suno API - 音乐生成服务
+suno_api:
+  enabled: true
+  base_url: "https://api.suno.ai/v1"
+  api_key: "YOUR_SUNO_API_KEY_HERE"  # 替换为真实API密钥
+  model: "chirp-v3-5"
+  timeout: 30
+  max_retries: 3
+  settings:
+    audio_quality: "high"
+    output_format: "mp3"
+    max_duration: 120  # 最大2分钟
+
+# Runway API - 视频生成服务
+runway_api:
+  enabled: true
+  base_url: "https://api.runwayml.com/v1"
+  api_key: "YOUR_RUNWAY_API_KEY_HERE"  # 替换为真实API密钥
+  model: "gen-2"
+  timeout: 60
+  max_retries: 3
+  settings:
+    video_quality: "hd"
+    output_format: "mp4"
+    max_duration: 60  # 最大1分钟
+
+# OpenAI API - 文本处理服务
+openai_api:
+  enabled: true
+  base_url: "https://api.openai.com/v1"
+  api_key: "YOUR_OPENAI_API_KEY_HERE"  # 替换为真实API密钥
+  model: "gpt-4"
+  timeout: 30
+  max_retries: 3
+  settings:
+    max_tokens: 1000
+    temperature: 0.7
+
+# 讯飞API - 语音识别服务（可选）
+xfyun_api:
+  enabled: false
+  app_id: "YOUR_XFYUN_APP_ID"
+  api_key: "YOUR_XFYUN_API_KEY"
+  api_secret: "YOUR_XFYUN_API_SECRET"
+
+# 百度API - 情绪识别服务（可选）
+baidu_api:
+  enabled: false
+  app_id: "YOUR_BAIDU_APP_ID"
+  api_key: "YOUR_BAIDU_API_KEY"
+  secret_key: "YOUR_BAIDU_SECRET_KEY"
+
+# 腾讯云API - 音视频处理服务（可选）
+tencent_api:
+  enabled: false
+  secret_id: "YOUR_TENCENT_SECRET_ID"
+  secret_key: "YOUR_TENCENT_SECRET_KEY"
+  region: "ap-beijing"
+
+# 全局设置
+global_settings:
+  # 演示模式设置
+  demo_mode: false  # true时使用模拟数据，false时使用真实API
+  
+  # 缓存设置
+  cache_enabled: true
+  cache_dir: "cache/"
+  cache_ttl: 3600  # 缓存有效期（秒）
+  
+  # 重试设置
+  global_timeout: 60
+  global_max_retries: 3
+  
+  # 日志设置
+  log_level: "INFO"
+  log_file: "logs/api.log"
+
+# 成本控制
+cost_control:
+  # 每日限制
+  daily_limits:
+    suno_requests: 100
+    runway_requests: 50
+    openai_tokens: 10000
+  
+  # 预算控制
+  budget_alerts:
+    daily_budget: 10.0  # 美元
+    monthly_budget: 300.0  # 美元
+    alert_threshold: 0.8  # 80%时发送警告
+
+# 服务质量
+quality_settings:
+  # 音频质量
+  audio:
+    sample_rate: 44100
+    bit_depth: 16
+    channels: 2
+  
+  # 视频质量
+  video:
+    resolution: "1920x1080"
+    fps: 30
+    bitrate: "2M"
+  
+  # 响应时间要求
+  performance:
+    target_latency: 500  # ms
+    max_acceptable_latency: 2000  # ms
+
+# 错误处理
+error_handling:
+  # 自动降级
+  auto_fallback: true
+  
+  # 降级策略
+  fallback_strategy:
+    suno_unavailable: "use_local_synthesis"
+    runway_unavailable: "use_static_visuals"
+    openai_unavailable: "use_local_nlp"
+  
+  # 错误通知
+  notifications:
+    email: "admin@example.com"
+    webhook: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"

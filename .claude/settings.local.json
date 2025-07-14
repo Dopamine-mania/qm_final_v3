@@ -4,7 +4,10 @@
       "mcp__graphiti-memory__search_memory_nodes",
       "mcp__graphiti-memory__search_memory_facts",
       "mcp__graphiti-memory__add_memory",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "mcp__zen__thinkdeep"
     ],
     "deny": []
   }
