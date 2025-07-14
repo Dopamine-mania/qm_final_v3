@@ -16,8 +16,8 @@ from pathlib import Path
 from datetime import datetime
 
 # 🛡️ 严格成本控制配置
-SUNO_API_ENABLED = False  # 默认关闭！！！
-TEST_MODE = True          # 测试模式
+SUNO_API_ENABLED = True   # 允许通过界面控制
+TEST_MODE = False         # 允许通过界面控制
 MAX_DAILY_CALLS = 3       # 每日最大调用次数
 API_KEY = "sk-sSxgx9y9kFOdio1I63qm8aSG1XhhHIOk9Yy2chKNnEvq0jq1"
 BASE_URL = "feiai.chat"
@@ -177,9 +177,9 @@ def call_suno_api(emotion, music_features, enable_real_api=False):
     """调用Suno API生成音乐（严格成本控制）"""
     global daily_call_count
     
-    # 安全检查
-    if not enable_real_api or not SUNO_API_ENABLED or TEST_MODE:
-        print("🧪 使用模拟Suno API响应（测试模式）")
+    # 安全检查 - 只有用户明确启用真实API才调用
+    if not enable_real_api:
+        print("🧪 使用模拟Suno API响应（用户未启用真实API）")
         return simulate_suno_response(emotion)
     
     # 检查调用限制
@@ -402,12 +402,10 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
             music_features = get_emotion_music_features(detected_emotion)
             
             # 严格成本控制检查
-            if enable_real_api and SUNO_API_ENABLED and not TEST_MODE:
+            if enable_real_api:
                 print("🚨 警告：即将调用真实Suno API，将产生费用！")
-                confirm = input("确认继续？(y/N): ").lower().strip()
-                if confirm != 'y':
-                    print("❌ 用户取消API调用")
-                    return "用户取消真实API调用", None, "已取消"
+                print(f"💰 今日剩余调用次数: {MAX_DAILY_CALLS - daily_call_count}")
+                # 在Web界面中，用户已经通过勾选框确认了
             
             # 调用Suno API
             suno_response = call_suno_api(detected_emotion, music_features, enable_real_api)
