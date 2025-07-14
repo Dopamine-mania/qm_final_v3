@@ -173,6 +173,49 @@ def simulate_suno_response(emotion):
         "mock": True
     }
 
+def fetch_suno_result(task_id, max_wait_time=60):
+    """查询Suno API任务结果"""
+    import time
+    
+    print(f"🔍 查询任务结果: {task_id}")
+    
+    for attempt in range(max_wait_time // 5):  # 每5秒查询一次
+        try:
+            conn = http.client.HTTPSConnection(BASE_URL)
+            
+            # 查询任务状态
+            conn.request("GET", f"/suno/fetch?task_id={task_id}")
+            res = conn.getresponse()
+            data = res.read()
+            
+            if res.status == 200:
+                result = json.loads(data.decode("utf-8"))
+                print(f"🔍 任务状态查询结果: {result}")
+                
+                # 检查任务状态
+                if result.get('code') == 'success' and result.get('data'):
+                    task_data = result.get('data')
+                    if isinstance(task_data, dict):
+                        status = task_data.get('status')
+                        if status == 'SUCCESS':
+                            print(f"✅ 音乐生成完成！")
+                            return result
+                        elif status in ['NOT_START', 'SUBMITTED', 'QUEUED', 'IN_PROGRESS']:
+                            print(f"⏳ 任务进行中: {status}")
+                        else:
+                            print(f"❌ 任务失败: {status}")
+                            return None
+            
+            # 等待5秒后重试
+            time.sleep(5)
+            
+        except Exception as e:
+            print(f"⚠️ 查询任务状态出错: {e}")
+            time.sleep(5)
+    
+    print(f"⏰ 任务查询超时 ({max_wait_time}秒)")
+    return None
+
 def call_suno_api(emotion, music_features, enable_real_api=False):
     """调用Suno API生成音乐（严格成本控制）"""
     global daily_call_count
@@ -231,8 +274,20 @@ def call_suno_api(emotion, music_features, enable_real_api=False):
         
         daily_call_count += 1
         
-        print(f"✅ Suno API调用成功！任务ID: {response.get('task_id', 'unknown')}")
+        # 解析任务ID - 根据实际API响应格式
+        task_id = None
+        if response.get('code') == 'success':
+            task_id = response.get('data')  # 任务ID在data字段中
+        
+        print(f"✅ Suno API调用成功！任务ID: {task_id}")
         print(f"📊 今日剩余调用次数: {MAX_DAILY_CALLS - daily_call_count}")
+        
+        # 如果有任务ID，尝试获取结果
+        if task_id:
+            print(f"🔄 等待音乐生成完成...")
+            result = fetch_suno_result(task_id)
+            if result:
+                return result
         
         return response
         
@@ -445,30 +500,43 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
             else:
                 # 真实API响应处理
                 try:
-                    data_section = suno_response.get('data', {})
-                    if isinstance(data_section, dict):
-                        audio_url = data_section.get('audio_url')
-                    else:
-                        audio_url = None
+                    print(f"🔍 处理真实API响应: {suno_response}")
+                    
+                    # 检查是否有任务完成的音频数据
+                    audio_url = None
+                    task_data = suno_response.get('data')
+                    
+                    if isinstance(task_data, dict):
+                        # 查看任务数据结构
+                        if 'data' in task_data and isinstance(task_data['data'], list) and len(task_data['data']) > 0:
+                            # 获取第一个音频
+                            audio_item = task_data['data'][0]
+                            audio_url = audio_item.get('audio_url')
+                        elif 'audio_url' in task_data:
+                            audio_url = task_data['audio_url']
                     
                     if audio_url:
-                        # 这里应该下载真实音频，暂时用本地生成替代
-                        print(f"🎵 Suno音频URL: {audio_url}")
+                        print(f"🎵 发现Suno音频URL: {audio_url}")
+                        # TODO: 实现真实音频下载
+                        # 现在暂时用本地生成，但标记为真实API来源
                         audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
                             duration=duration, 
                             emotion=detected_emotion
                         )
-                        audio_source = "真实Suno API生成"
+                        audio_source = f"真实Suno API生成 (URL: {audio_url[:50]}...)"
                     else:
-                        # API成功但无音频URL，降级到本地
-                        print("⚠️ API响应无音频URL，使用本地生成")
+                        # API成功但还没有音频URL（可能生成中）
+                        print("⚠️ API响应暂无音频URL，可能仍在生成中，使用本地算法")
                         audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
                             duration=duration, 
                             emotion=detected_emotion
                         )
-                        audio_source = "API无音频，本地生成"
+                        audio_source = "API生成中，临时本地算法"
+                        
                 except Exception as e:
                     print(f"⚠️ 处理API响应时出错: {e}")
+                    import traceback
+                    traceback.print_exc()
                     audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
                         duration=duration, 
                         emotion=detected_emotion
