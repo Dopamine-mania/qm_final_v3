@@ -118,7 +118,27 @@ python main.py --config configs/custom_config.yaml
 
 ## 🎵 最新更新：优化演示模式
 
-### 🚀 gradio_demo_optimized.py (最新推荐)
+### 🌟 enhanced_therapy_demo.py (最新推荐 - 增强三阶段疗愈)
+**真正流畅过渡和音画完美同步的增强疗愈系统**
+
+#### ✨ **核心特色**
+- **流畅过渡**：无明显停顿的三阶段切换
+- **数学精确**：基于数学函数的平滑过渡曲线
+- **情绪映射**：每种情绪的专属参数设计
+- **疗愈叙事**：连贯的情绪转换故事
+- **立体声场**：专业级音频空间化处理
+
+#### 🎵 **三阶段设计**
+- **同步期(30%)**：匹配用户情绪状态
+- **引导期(40%)**：流畅过渡到放松状态
+- **巩固期(30%)**：深度放松，准备入睡
+
+#### 📁 **三个版本**
+1. **enhanced_therapy_demo.py**：完整演示系统（推荐）
+2. **simple_enhanced_therapy.py**：基础增强疗愈系统
+3. **enhanced_therapy_with_visual.py**：增强疗愈 + 呼吸可视化
+
+### 🚀 gradio_demo_optimized.py (Web界面版本)
 支持双模式选择的智能演示版本：
 
 #### 🎵 **纯音乐模式**（推荐日常使用）
@@ -148,6 +168,32 @@ python main.py --config configs/custom_config.yaml
 - 提供详细的问题修复建议
 
 ### 📋 使用步骤
+
+#### 🌟 **增强三阶段疗愈系统**（推荐）
+
+1. **运行完整演示**：
+   ```bash
+   python enhanced_therapy_demo.py
+   ```
+
+2. **运行多场景演示**：
+   ```bash
+   python enhanced_therapy_demo.py --demo
+   ```
+
+3. **运行可视化版本**：
+   ```bash
+   python enhanced_therapy_with_visual.py
+   ```
+
+4. **功能特色**：
+   - 自动情绪识别（焦虑、疲惫、烦躁、平静、压力）
+   - 流畅三阶段过渡（无明显停顿）
+   - 数学精确的过渡曲线
+   - 专业级立体声音频
+   - 实时呼吸可视化引导
+
+#### 🎬 **Web界面版本**（演示展示）
 
 1. **检查系统状态**：
    ```bash
@@ -270,6 +316,12 @@ python main.py --config configs/custom_config.yaml
 
 ### 最新优化 🔄
 
+- [x] **增强三阶段疗愈系统** (enhanced_therapy_demo.py)
+- [x] **流畅过渡** (数学精确的平滑过渡曲线)
+- [x] **完美音画同步** (视觉效果与音频完美匹配)
+- [x] **情绪专属参数** (5种情绪类型的独特设计)
+- [x] **立体声场** (专业级音频空间化处理)
+- [x] **呼吸可视化** (实时呼吸引导和阶段显示)
 - [x] **双模式选择** (gradio_demo_optimized.py)
 - [x] **纯音乐模式** (3-5秒快速生成)
 - [x] **音画结合模式** (15-20秒完整体验)
