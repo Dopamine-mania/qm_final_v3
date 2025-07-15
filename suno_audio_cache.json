@@ -1,0 +1,13 @@
+{
+  "fdd1b90b-47e2-44ca-a3b9-8b7ff83554dc": {
+    "task_id": "fdd1b90b-47e2-44ca-a3b9-8b7ff83554dc",
+    "audio_url": "https://cdn1.suno.ai/7d0fa1f8-6cb6-46ca-b937-c13dab540209.mp3",
+    "title": "Whisper of the Moon",
+    "duration": 104.4,
+    "status": "unknown",
+    "model": "chirp-v4",
+    "prompt": "calm sleep",
+    "local_file": "/Users/wanxinchen/Study/AI/Project/Final project/SuperClaude/qm_final3/suno_fdd1b90b_Whisper of the Moon.mp3",
+    "file_size": 2542701
+  }
+}

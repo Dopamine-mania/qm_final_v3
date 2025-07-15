@@ -326,6 +326,28 @@ def call_suno_api(emotion, music_features, enable_real_api=False):
     """调用Suno API生成音乐（严格成本控制）"""
     global daily_call_count
     
+    # 🧪 测试模式：使用真实音频URL但不调用API
+    TEST_MODE = True  # 改为False启用真实API调用
+    
+    if TEST_MODE and enable_real_api:
+        print("🧪 测试模式：模拟API成功，使用真实音频URL")
+        return {
+            "code": "success",
+            "data": {
+                "task_id": "test-task-123",
+                "status": "IN_PROGRESS",
+                "data": [
+                    {
+                        "id": "test-audio-1",
+                        "title": "Test Therapy Music",
+                        "duration": 104.4,
+                        "audio_url": "https://cdn1.suno.ai/7d0fa1f8-6cb6-46ca-b937-c13dab540209.mp3",
+                        "tags": "therapy, sleep, calm, test"
+                    }
+                ]
+            }
+        }
+    
     # 安全检查 - 只有用户明确启用真实API才调用
     if not enable_real_api:
         print("🧪 使用模拟Suno API响应（用户未启用真实API）")
@@ -956,10 +978,22 @@ def create_therapy_interface():
                         info="启用真实AI音乐（测试模式下安全）"
                     )
                     enable_real_api = gr.Checkbox(
-                        label="💰 启用真实API调用",
+                        label="🧪 启用测试模式（推荐）",
                         value=False,
-                        info="⚠️ 需要消耗API费用！"
+                        info="✅ 免费测试！使用真实音频URL但不调用API"
                     )
+                
+                # 测试模式说明
+                gr.HTML("""
+                <div style="background: #e8f4f8; border: 1px solid #2196F3; border-radius: 8px; padding: 12px; margin: 10px 0;">
+                    <h4 style="color: #1976D2; margin: 0 0 8px 0;">🧪 测试模式说明</h4>
+                    <p style="margin: 0; font-size: 14px; color: #333;">
+                        • <strong>测试模式</strong>：使用真实音频URL但不调用API，完全免费<br>
+                        • <strong>真实模式</strong>：调用真实API，需要消耗费用<br>
+                        • <strong>推荐</strong>：先用测试模式验证功能，再考虑真实调用
+                    </p>
+                </div>
+                """)
                 
                 # 现有任务ID输入（避免重复调用）
                 existing_task_input = gr.Textbox(

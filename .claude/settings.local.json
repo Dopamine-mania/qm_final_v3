@@ -16,7 +16,8 @@
       "Bash(python:*)",
       "mcp__graphiti-memory__get_episodes",
       "Bash(pip install:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(GRADIO_SERVER_PORT=7871 python gradio_enhanced_final.py)"
     ],
     "deny": []
   }
