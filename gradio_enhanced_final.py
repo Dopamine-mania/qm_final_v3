@@ -286,35 +286,95 @@ def call_stable_diffusion_api(prompt, enable_real_api=False):
     """调用Stable Diffusion API生成图片"""
     global image_generation_count
     
-    # 🧪 测试模式：使用更具体的占位符图片
+    # 🧪 测试模式：生成真实的本地图片文件
     TEST_MODE = True  # 改为False启用真实API调用
     
     if TEST_MODE and enable_real_api:
-        print(f"🧪 测试模式：模拟图片生成 - {prompt[:50]}...")
+        print(f"🧪 测试模式：生成本地图片 - {prompt[:50]}...")
         
-        # 根据提示词生成不同的占位符图片
+        # 根据提示词生成不同的本地图片
         image_generation_count += 1
         
         # 根据提示词内容选择合适的颜色和主题
         if "dark" in prompt or "storm" in prompt or "chaos" in prompt:
-            color = "2C3E50"  # 深色
-            theme = "Dark+Matching"
+            color = (44, 62, 80)  # 深色
+            theme = "匹配阶段"
         elif "moonlight" in prompt or "clearing" in prompt or "transition" in prompt:
-            color = "3498DB"  # 蓝色
-            theme = "Transition+Guide"
+            color = (52, 152, 219)  # 蓝色
+            theme = "引导阶段"
         elif "peaceful" in prompt or "calm" in prompt or "harmony" in prompt:
-            color = "27AE60"  # 绿色
-            theme = "Peace+Target"
+            color = (39, 174, 96)  # 绿色
+            theme = "目标阶段"
         else:
-            color = "E74C3C"  # 默认红色
-            theme = "Therapy+Image"
+            color = (231, 76, 60)  # 默认红色
+            theme = "疗愈图片"
         
-        return {
-            "success": True,
-            "image_url": f"https://via.placeholder.com/512x512/{color}/FFFFFF?text={theme}+{image_generation_count}",
-            "prompt": prompt,
-            "mock": True
-        }
+        # 生成本地图片文件
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            import tempfile
+            
+            # 创建512x512的图片
+            img = Image.new('RGB', (512, 512), color)
+            draw = ImageDraw.Draw(img)
+            
+            # 添加文字
+            try:
+                # 尝试使用系统字体
+                font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 48)
+            except:
+                # 如果没有系统字体，使用默认字体
+                font = ImageFont.load_default()
+            
+            # 绘制主题文字
+            text_lines = [
+                f"{theme}",
+                f"第 {image_generation_count} 张",
+                "疗愈图片"
+            ]
+            
+            # 计算文字位置
+            y_offset = 200
+            for line in text_lines:
+                bbox = draw.textbbox((0, 0), line, font=font)
+                text_width = bbox[2] - bbox[0]
+                text_height = bbox[3] - bbox[1]
+                x = (512 - text_width) // 2
+                
+                # 绘制白色文字
+                draw.text((x, y_offset), line, fill=(255, 255, 255), font=font)
+                y_offset += text_height + 20
+            
+            # 保存到临时文件
+            temp_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+            img.save(temp_file.name, 'PNG')
+            temp_file.close()
+            
+            print(f"✅ 生成本地图片: {temp_file.name}")
+            
+            return {
+                "success": True,
+                "image_path": temp_file.name,  # 返回本地文件路径
+                "prompt": prompt,
+                "mock": True
+            }
+            
+        except ImportError:
+            print("⚠️ PIL不可用，使用文本占位符")
+            # 如果PIL不可用，创建一个简单的文本文件作为占位符
+            temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False)
+            temp_file.write(f"疗愈图片 {image_generation_count}\n主题: {theme}\n提示词: {prompt[:100]}...")
+            temp_file.close()
+            
+            return {
+                "success": True,
+                "image_path": temp_file.name,
+                "prompt": prompt,
+                "mock": True
+            }
+        except Exception as e:
+            print(f"❌ 生成本地图片失败: {e}")
+            return {"success": False, "error": str(e)}
     
     if not enable_real_api:
         print("🔒 图片生成API已禁用")
@@ -844,10 +904,12 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
                                                 enable_real_api and STABLE_DIFFUSION_ENABLED
                                             )
                                             if image_result.get('success'):
+                                                # 使用image_path而不是image_url
+                                                image_path = image_result.get('image_path') or image_result.get('image_url')
                                                 generated_images.append({
                                                     'stage': prompt_data['stage'],
                                                     'timestamp': prompt_data['timestamp'],
-                                                    'image_url': image_result.get('image_url'),
+                                                    'image_path': image_path,
                                                     'prompt': prompt_data['prompt'][:50] + "..."
                                                 })
                                         
@@ -903,7 +965,7 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
 ✨ 这就是您花费API费用获得的真实Suno AI音乐！"""
                                 
                                 # 准备图片数据用于Gradio Gallery
-                                image_gallery = [img['image_url'] for img in generated_images] if generated_images else []
+                                image_gallery = [img['image_path'] for img in generated_images] if generated_images else []
                                 
                                 return report, audio_file, image_gallery, f"真实Suno AI - {detected_emotion}疗愈音乐"
                             else:
@@ -1059,7 +1121,9 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
                         enable_real_api and STABLE_DIFFUSION_ENABLED
                     )
                     if image_result.get('success'):
-                        image_gallery.append(image_result.get('image_url'))
+                        # 使用image_path而不是image_url
+                        image_path = image_result.get('image_path') or image_result.get('image_url')
+                        image_gallery.append(image_path)
                         
                 print(f"✅ 生成了{len(image_gallery)}张配套图片")
             except Exception as img_error:
