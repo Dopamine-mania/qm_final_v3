@@ -518,14 +518,18 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
                 else:
                     print("✅ 成功获取现有任务结果")
             else:
-                # 严格成本控制检查
-                if enable_real_api:
-                    print("🚨 警告：即将调用真实Suno API，将产生费用！")
+                # 严格成本控制检查 - 必须两个条件都满足才调用真实API
+                if use_suno_api and enable_real_api:
+                    print("🚨 警告：两个条件都满足，即将调用真实Suno API，将产生费用！")
                     print(f"💰 今日剩余调用次数: {MAX_DAILY_CALLS - daily_call_count}")
                     # 在Web界面中，用户已经通过勾选框确认了
+                    actual_enable_real_api = True
+                else:
+                    print("ℹ️ 成本控制：需要同时勾选'使用Suno AI'和'启用真实API'才调用真实API")
+                    actual_enable_real_api = False
                 
                 # 调用Suno API
-                suno_response = call_suno_api(detected_emotion, music_features, enable_real_api)
+                suno_response = call_suno_api(detected_emotion, music_features, actual_enable_real_api)
             
             # 安全检查API响应
             if not suno_response or not isinstance(suno_response, dict):
@@ -708,7 +712,10 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
 
 def load_previous_suno_music():
     """加载之前成功生成的Suno音乐"""
-    audio_file_path = "/Users/wanxinchen/Study/AI/Project/Final project/SuperClaude/qm_final3/previous_suno_fdd1b90b.mp3"
+    # 使用相对路径，兼容不同系统
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    audio_file_path = os.path.join(current_dir, "previous_suno_fdd1b90b.mp3")
     
     if os.path.exists(audio_file_path):
         report = f"""🎵 成功加载之前的Suno AI音乐！
@@ -716,7 +723,7 @@ def load_previous_suno_music():
 🎼 音乐信息:
    • 标题: "Whisper of the Moon"
    • 时长: 约2分44秒 (164秒)
-   • 模型: Chirp-v4 (Suno最新模型)
+   • 模型: 已修复为Chirp-v3 (成本优化)
    • 风格: 宁静睡眠音乐
    • 标签: sleep, soft, acoustic, soothing
    
