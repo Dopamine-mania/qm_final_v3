@@ -12,6 +12,8 @@ import tempfile
 import os
 import json
 import http.client
+import urllib.request
+import urllib.parse
 from pathlib import Path
 from datetime import datetime
 
@@ -25,6 +27,71 @@ BASE_URL = "feiai.chat"
 # 全局调用计数器
 daily_call_count = 0
 last_call_date = None
+
+def download_suno_audio(audio_url):
+    """下载Suno AI音频文件并转换为适合播放的格式"""
+    try:
+        print(f"🌐 开始下载Suno音频: {audio_url}")
+        
+        # 创建临时文件
+        with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as tmp_mp3:
+            mp3_file = tmp_mp3.name
+        
+        # 下载音频文件
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        
+        request = urllib.request.Request(audio_url, headers=headers)
+        
+        with urllib.request.urlopen(request, timeout=30) as response:
+            if response.status != 200:
+                raise Exception(f"下载失败，HTTP状态码: {response.status}")
+            
+            # 读取音频数据
+            audio_data = response.read()
+            
+            if len(audio_data) == 0:
+                raise Exception("下载的音频文件为空")
+            
+            # 保存为MP3
+            with open(mp3_file, 'wb') as f:
+                f.write(audio_data)
+            
+            print(f"✅ 音频下载完成: {mp3_file} ({len(audio_data)} bytes)")
+        
+        # 验证文件
+        if not os.path.exists(mp3_file) or os.path.getsize(mp3_file) == 0:
+            raise Exception("下载的音频文件无效")
+        
+        # 转换为WAV格式（Gradio更好支持）
+        wav_file = mp3_file.replace('.mp3', '.wav')
+        
+        try:
+            # 尝试使用pydub转换
+            from pydub import AudioSegment
+            audio = AudioSegment.from_mp3(mp3_file)
+            audio.export(wav_file, format="wav")
+            print(f"✅ 音频转换完成: {wav_file}")
+            
+            # 清理临时MP3文件
+            os.unlink(mp3_file)
+            return wav_file
+            
+        except ImportError:
+            print("⚠️ pydub不可用，尝试直接使用MP3文件")
+            # 如果没有pydub，直接返回MP3文件
+            return mp3_file
+            
+        except Exception as convert_error:
+            print(f"⚠️ 音频转换失败: {convert_error}，使用原始MP3")
+            return mp3_file
+            
+    except Exception as e:
+        print(f"❌ 下载Suno音频失败: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 def get_emotion_music_features(emotion):
     """根据ISO三阶段原则映射情绪到音乐特征（硕士项目核心理论）"""
@@ -566,13 +633,56 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
                     
                     if audio_url:
                         print(f"🎵 发现Suno音频URL: {audio_url}")
-                        # TODO: 实现真实音频下载
-                        # 现在暂时用本地生成，但标记为真实API来源
-                        audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
-                            duration=duration, 
-                            emotion=detected_emotion
-                        )
-                        audio_source = f"真实Suno API生成 (URL: {audio_url[:50]}...)"
+                        # 下载真实Suno AI音频
+                        try:
+                            downloaded_audio = download_suno_audio(audio_url)
+                            if downloaded_audio:
+                                audio_file = downloaded_audio  # 直接使用下载的文件
+                                audio_source = f"真实Suno AI音乐 (URL: {audio_url[:50]}...)"
+                                print(f"✅ 成功下载真实Suno音乐: {audio_file}")
+                                
+                                # 跳过本地生成，直接返回报告
+                                processing_time = time.time() - start_time
+                                music_features = get_emotion_music_features(detected_emotion)
+                                
+                                report = f"""✅ 真实Suno AI音乐生成完成！
+
+🧠 情绪识别结果:
+   • 检测情绪: {detected_emotion}
+   • 置信度: {confidence:.1%}
+   • 处理时间: {processing_time:.1f}秒
+   • 音频来源: {audio_source}
+
+🎵 真实AI音乐信息:
+   • 来源: Suno AI (chirp-v3模型)
+   • 音频URL: {audio_url[:60]}...
+   • 下载状态: ✅ 成功下载
+   • 文件格式: MP3 → WAV (兼容播放)
+
+🌊 三阶段疗愈设计:
+   • 匹配阶段(30%): {music_features['匹配阶段']['mood']}
+   • 引导阶段(40%): {music_features['引导阶段']['mood']} 
+   • 目标阶段(30%): {music_features['目标阶段']['mood']}
+
+🎧 聆听建议:
+   • 这是真实的AI生成音乐，请用耳机体验
+   • 音量调至舒适水平
+   • 专注感受AI音乐的疗愈效果
+
+✨ 这就是您花费API费用获得的真实Suno AI音乐！"""
+                                
+                                return report, audio_file, f"真实Suno AI - {detected_emotion}疗愈音乐"
+                            else:
+                                raise Exception("音频下载失败")
+                                
+                        except Exception as download_error:
+                            print(f"⚠️ 下载真实音频失败: {download_error}")
+                            print("降级到本地生成，但标记为API来源")
+                            audio_array, sample_rate, params = generate_enhanced_therapy_audio_fast(
+                                duration=duration, 
+                                emotion=detected_emotion
+                            )
+                            audio_source = f"真实API调用成功，但下载失败，本地替代 (URL: {audio_url[:50]}...)"
                     else:
                         # API成功但还没有音频URL（可能生成中）
                         print("⚠️ API响应暂无音频URL，可能仍在生成中，使用本地算法")
