@@ -1,0 +1,23 @@
+文生图stable diffusion
+示例代码：
+import http.client
+import json
+
+conn = http.client.HTTPSConnection("feiai.chat")
+payload = json.dumps({
+   "model": "stable-diffusion",
+   "messages": [
+      {
+         "role": "user",
+         "content": "striking poses, stunning backdrop of rocky coastline and golden hour lighting, fashion-forward wardrobe, eye-catching accessories, warm and inviting color palette, sharp and detailed digital rendering, stunning high definition finish, on eye level, scenic, masterpiece"
+      }
+   ]
+})
+headers = {
+   'Accept': 'application/json',
+   'Content-Type': 'application/json'
+}
+conn.request("POST", "/v1/chat/completions", payload, headers)
+res = conn.getresponse()
+data = res.read()
+print(data.decode("utf-8"))

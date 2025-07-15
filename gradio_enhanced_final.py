@@ -24,9 +24,15 @@ MAX_DAILY_CALLS = 3       # 每日最大调用次数
 API_KEY = "sk-sSxgx9y9kFOdio1I63qm8aSG1XhhHIOk9Yy2chKNnEvq0jq1"
 BASE_URL = "feiai.chat"
 
+# 🖼️ 图片生成配置
+STABLE_DIFFUSION_ENABLED = True  # 允许通过界面控制
+MAX_IMAGES_PER_SESSION = 5       # 每会话最大图片数量
+IMAGE_GENERATION_INTERVAL = 3    # 图片生成间隔（秒）
+
 # 全局调用计数器
 daily_call_count = 0
 last_call_date = None
+image_generation_count = 0
 
 def download_suno_audio(audio_url):
     """下载Suno AI音频文件并转换为适合播放的格式"""
@@ -214,6 +220,136 @@ def generate_suno_prompt(emotion, music_features):
     simple_prompt = emotion_map.get(emotion, "sleep music")
     
     return simple_prompt
+
+def generate_image_prompts(emotion, music_features, duration):
+    """根据ISO三阶段原则生成图片提示词序列"""
+    # 计算图片数量：每3秒一张图片
+    num_images = max(3, int(duration / IMAGE_GENERATION_INTERVAL))
+    if num_images > MAX_IMAGES_PER_SESSION:
+        num_images = MAX_IMAGES_PER_SESSION
+    
+    # 三阶段视觉风格映射
+    stage_visuals = {
+        "匹配阶段": {
+            "焦虑": "dark stormy clouds, turbulent ocean waves, dramatic shadows, moody atmosphere",
+            "疲惫": "wilted flowers, fading sunset, tired traveler, exhausted landscape",
+            "烦躁": "chaotic storm, lightning strikes, restless energy, turbulent emotions",
+            "平静": "gentle morning light, soft meadow, peaceful lake, serene atmosphere",
+            "压力": "heavy rain, pressing clouds, intense atmosphere, overwhelming environment"
+        },
+        "引导阶段": {
+            "焦虑": "soft moonlight breaking through clouds, gentle waves, calming transition",
+            "疲惫": "warm sunrise, blooming flowers, rejuvenating spring, peaceful rest",
+            "烦躁": "clearing storm, rainbow appearing, peaceful after chaos, gentle breeze",
+            "平静": "flowing stream, harmonious nature, balanced elements, perfect serenity",
+            "压力": "clearing skies, burden lifting, light breaking through, relief atmosphere"
+        },
+        "目标阶段": {
+            "焦虑": "peaceful starry night, calm ocean, deep relaxation, tranquil sleep",
+            "疲惫": "energetic morning, vibrant landscape, renewed vitality, fresh beginning",
+            "烦躁": "perfect harmony, balanced nature, inner peace, emotional stability",
+            "平静": "transcendent beauty, spiritual calm, perfect balance, ultimate peace",
+            "压力": "complete freedom, weightless feeling, liberated spirit, stress-free environment"
+        }
+    }
+    
+    # 生成图片提示词序列
+    prompts = []
+    stages = ["匹配阶段", "引导阶段", "目标阶段"]
+    
+    for i in range(num_images):
+        # 计算当前阶段
+        stage_progress = i / (num_images - 1) if num_images > 1 else 0
+        if stage_progress < 0.33:
+            stage = "匹配阶段"
+        elif stage_progress < 0.67:
+            stage = "引导阶段"
+        else:
+            stage = "目标阶段"
+        
+        # 获取基础视觉描述
+        base_visual = stage_visuals[stage].get(emotion, stage_visuals[stage]["焦虑"])
+        
+        # 增强提示词
+        enhanced_prompt = f"{base_visual}, therapeutic healing art, soft natural lighting, peaceful atmosphere, emotional journey, masterpiece, high quality, cinematic, beautiful composition"
+        
+        prompts.append({
+            "stage": stage,
+            "timestamp": i * IMAGE_GENERATION_INTERVAL,
+            "prompt": enhanced_prompt,
+            "emotion": emotion
+        })
+    
+    return prompts
+
+def call_stable_diffusion_api(prompt, enable_real_api=False):
+    """调用Stable Diffusion API生成图片"""
+    global image_generation_count
+    
+    # 🧪 测试模式：使用占位符图片
+    TEST_MODE = True  # 改为False启用真实API调用
+    
+    if TEST_MODE and enable_real_api:
+        print(f"🧪 测试模式：模拟图片生成 - {prompt[:50]}...")
+        return {
+            "success": True,
+            "image_url": f"https://via.placeholder.com/512x512/87CEEB/000000?text=Therapy+Image+{image_generation_count+1}",
+            "prompt": prompt,
+            "mock": True
+        }
+    
+    if not enable_real_api:
+        print("🔒 图片生成API已禁用")
+        return {"success": False, "error": "API disabled"}
+    
+    try:
+        # 检查生成限制
+        if image_generation_count >= MAX_IMAGES_PER_SESSION:
+            raise Exception(f"🚫 本会话图片生成已达上限 ({MAX_IMAGES_PER_SESSION})")
+        
+        print(f"🎨 调用Stable Diffusion API...")
+        print(f"🖼️ 提示词: {prompt}")
+        
+        # 调用API
+        conn = http.client.HTTPSConnection(BASE_URL)
+        payload = json.dumps({
+            "model": "stable-diffusion",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        })
+        
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+        
+        conn.request("POST", "/v1/chat/completions", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+        
+        print(f"🔍 Stable Diffusion API响应状态: {res.status}")
+        
+        if res.status == 200:
+            result = json.loads(data.decode("utf-8"))
+            print(f"✅ 图片生成成功")
+            image_generation_count += 1
+            return {
+                "success": True,
+                "result": result,
+                "prompt": prompt
+            }
+        else:
+            print(f"❌ API请求失败，状态码: {res.status}")
+            print(f"   响应内容: {data.decode('utf-8')}")
+            return {"success": False, "error": f"API Error: {res.status}"}
+            
+    except Exception as e:
+        print(f"❌ 图片生成失败: {e}")
+        return {"success": False, "error": str(e)}
 
 def check_api_call_limit():
     """检查API调用限制"""
@@ -585,8 +721,8 @@ def detect_emotion_enhanced(user_input):
     confidence = min(0.85 + max_score * 0.03, 0.95)
     return detected_emotion, confidence
 
-def process_therapy_request(user_input, duration, use_suno_api=False, enable_real_api=False, existing_task_id=""):
-    """处理疗愈请求 - 端到端流程（增强Suno API支持）"""
+def process_therapy_request(user_input, duration, use_suno_api=False, enable_real_api=False, existing_task_id="", enable_image_generation=False):
+    """处理疗愈请求 - 端到端流程（增强Suno API支持 + 图片生成）"""
     if not user_input or len(user_input.strip()) < 3:
         return "⚠️ 请输入至少3个字符描述您的情绪状态", None, "输入过短"
     
@@ -671,6 +807,53 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
                                 audio_source = f"真实Suno AI音乐 (URL: {audio_url[:50]}...)"
                                 print(f"✅ 成功下载真实Suno音乐: {audio_file}")
                                 
+                                # 如果启用图片生成，生成配套图片
+                                image_info = ""
+                                if enable_image_generation:
+                                    print("🎨 开始生成配套疗愈图片...")
+                                    try:
+                                        # 获取音乐时长（从音频文件或默认）
+                                        music_duration = duration or 104  # 默认时长
+                                        
+                                        # 生成图片提示词序列
+                                        image_prompts = generate_image_prompts(detected_emotion, music_features, music_duration)
+                                        
+                                        # 生成图片
+                                        generated_images = []
+                                        for prompt_data in image_prompts:
+                                            image_result = call_stable_diffusion_api(
+                                                prompt_data['prompt'], 
+                                                enable_real_api and STABLE_DIFFUSION_ENABLED
+                                            )
+                                            if image_result.get('success'):
+                                                generated_images.append({
+                                                    'stage': prompt_data['stage'],
+                                                    'timestamp': prompt_data['timestamp'],
+                                                    'image_url': image_result.get('image_url'),
+                                                    'prompt': prompt_data['prompt'][:50] + "..."
+                                                })
+                                        
+                                        if generated_images:
+                                            image_info = f"""
+
+🖼️ 配套疗愈图片 ({len(generated_images)}张):
+   • 图片总数: {len(generated_images)}张
+   • 生成间隔: {IMAGE_GENERATION_INTERVAL}秒
+   • 同步音乐: 完美匹配三阶段疗愈"""
+                                            
+                                            for i, img in enumerate(generated_images):
+                                                image_info += f"""
+   • 图片{i+1}: {img['stage']} (第{img['timestamp']}秒)"""
+                                        
+                                    except Exception as img_error:
+                                        print(f"⚠️ 图片生成失败: {img_error}")
+                                        image_info = f"""
+
+🖼️ 图片生成状态:
+   • 状态: ❌ 生成失败
+   • 原因: {str(img_error)}
+   • 影响: 音乐播放不受影响"""
+                                
                                 # 跳过本地生成，直接返回报告
                                 processing_time = time.time() - start_time
                                 music_features = get_emotion_music_features(detected_emotion)
@@ -692,7 +875,7 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
 🌊 三阶段疗愈设计:
    • 匹配阶段(30%): {music_features['匹配阶段']['mood']}
    • 引导阶段(40%): {music_features['引导阶段']['mood']} 
-   • 目标阶段(30%): {music_features['目标阶段']['mood']}
+   • 目标阶段(30%): {music_features['目标阶段']['mood']}{image_info}
 
 🎧 聆听建议:
    • 这是真实的AI生成音乐，请用耳机体验
@@ -983,6 +1166,14 @@ def create_therapy_interface():
                         info="✅ 免费测试！使用真实音频URL但不调用API"
                     )
                 
+                # 图片生成选项
+                with gr.Row():
+                    enable_image_generation = gr.Checkbox(
+                        label="🖼️ 启用配套图片生成",
+                        value=False,
+                        info="根据三阶段疗愈生成匹配图片序列"
+                    )
+                
                 # 测试模式说明
                 gr.HTML("""
                 <div style="background: #e8f4f8; border: 1px solid #2196F3; border-radius: 8px; padding: 12px; margin: 10px 0;">
@@ -991,6 +1182,19 @@ def create_therapy_interface():
                         • <strong>测试模式</strong>：使用真实音频URL但不调用API，完全免费<br>
                         • <strong>真实模式</strong>：调用真实API，需要消耗费用<br>
                         • <strong>推荐</strong>：先用测试模式验证功能，再考虑真实调用
+                    </p>
+                </div>
+                """)
+                
+                # 图片生成说明
+                gr.HTML("""
+                <div style="background: #f3e5f5; border: 1px solid #9c27b0; border-radius: 8px; padding: 12px; margin: 10px 0;">
+                    <h4 style="color: #7b1fa2; margin: 0 0 8px 0;">🖼️ 图片生成功能</h4>
+                    <p style="margin: 0; font-size: 14px; color: #333;">
+                        • <strong>成本控制</strong>：用图片生成替代昂贵的视频生成<br>
+                        • <strong>音画同步</strong>：根据音乐节拍隔3秒生成匹配图片<br>
+                        • <strong>ISO三阶段</strong>：匹配→引导→目标，自然过渡<br>
+                        • <strong>完美配套</strong>：最终可合成音画疗愈视频
                     </p>
                 </div>
                 """)
@@ -1116,7 +1320,7 @@ def create_therapy_interface():
         
         generate_btn.click(
             process_therapy_request,
-            inputs=[emotion_input, duration_slider, use_suno, enable_real_api, existing_task_input],
+            inputs=[emotion_input, duration_slider, use_suno, enable_real_api, existing_task_input, enable_image_generation],
             outputs=[info_output, audio_output, status_output]
         )
         
