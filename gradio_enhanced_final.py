@@ -286,14 +286,32 @@ def call_stable_diffusion_api(prompt, enable_real_api=False):
     """调用Stable Diffusion API生成图片"""
     global image_generation_count
     
-    # 🧪 测试模式：使用占位符图片
+    # 🧪 测试模式：使用更具体的占位符图片
     TEST_MODE = True  # 改为False启用真实API调用
     
     if TEST_MODE and enable_real_api:
         print(f"🧪 测试模式：模拟图片生成 - {prompt[:50]}...")
+        
+        # 根据提示词生成不同的占位符图片
+        image_generation_count += 1
+        
+        # 根据提示词内容选择合适的颜色和主题
+        if "dark" in prompt or "storm" in prompt or "chaos" in prompt:
+            color = "2C3E50"  # 深色
+            theme = "Dark+Matching"
+        elif "moonlight" in prompt or "clearing" in prompt or "transition" in prompt:
+            color = "3498DB"  # 蓝色
+            theme = "Transition+Guide"
+        elif "peaceful" in prompt or "calm" in prompt or "harmony" in prompt:
+            color = "27AE60"  # 绿色
+            theme = "Peace+Target"
+        else:
+            color = "E74C3C"  # 默认红色
+            theme = "Therapy+Image"
+        
         return {
             "success": True,
-            "image_url": f"https://via.placeholder.com/512x512/87CEEB/000000?text=Therapy+Image+{image_generation_count+1}",
+            "image_url": f"https://via.placeholder.com/512x512/{color}/FFFFFF?text={theme}+{image_generation_count}",
             "prompt": prompt,
             "mock": True
         }
@@ -724,7 +742,7 @@ def detect_emotion_enhanced(user_input):
 def process_therapy_request(user_input, duration, use_suno_api=False, enable_real_api=False, existing_task_id="", enable_image_generation=False):
     """处理疗愈请求 - 端到端流程（增强Suno API支持 + 图片生成）"""
     if not user_input or len(user_input.strip()) < 3:
-        return "⚠️ 请输入至少3个字符描述您的情绪状态", None, "输入过短"
+        return "⚠️ 请输入至少3个字符描述您的情绪状态", None, [], "输入过短"
     
     try:
         start_time = time.time()
@@ -809,6 +827,7 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
                                 
                                 # 如果启用图片生成，生成配套图片
                                 image_info = ""
+                                generated_images = []
                                 if enable_image_generation:
                                     print("🎨 开始生成配套疗愈图片...")
                                     try:
@@ -819,7 +838,6 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
                                         image_prompts = generate_image_prompts(detected_emotion, music_features, music_duration)
                                         
                                         # 生成图片
-                                        generated_images = []
                                         for prompt_data in image_prompts:
                                             image_result = call_stable_diffusion_api(
                                                 prompt_data['prompt'], 
@@ -884,7 +902,10 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
 
 ✨ 这就是您花费API费用获得的真实Suno AI音乐！"""
                                 
-                                return report, audio_file, f"真实Suno AI - {detected_emotion}疗愈音乐"
+                                # 准备图片数据用于Gradio Gallery
+                                image_gallery = [img['image_url'] for img in generated_images] if generated_images else []
+                                
+                                return report, audio_file, image_gallery, f"真实Suno AI - {detected_emotion}疗愈音乐"
                             else:
                                 raise Exception("音频下载失败")
                                 
@@ -957,7 +978,7 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
             print(f"❌ 音频保存失败: {e}")
             import traceback
             traceback.print_exc()
-            return f"❌ 音频保存失败: {e}", None, "保存失败"
+            return f"❌ 音频保存失败: {e}", None, [], "保存失败"
         
         processing_time = time.time() - start_time
         
@@ -1024,14 +1045,34 @@ def process_therapy_request(user_input, duration, use_suno_api=False, enable_rea
         print(f"🔍 返回的audio_file: {audio_file}")
         print(f"🔍 文件是否存在: {os.path.exists(audio_file) if 'audio_file' in locals() else 'audio_file未定义'}")
         
-        return report, audio_file, f"成功生成{detected_emotion}疗愈音频 - {audio_source}"
+        # 处理图片生成（适用于所有情况）
+        image_gallery = []
+        if enable_image_generation:
+            try:
+                print("🎨 生成本地疗愈配套图片...")
+                music_features = get_emotion_music_features(detected_emotion)
+                image_prompts = generate_image_prompts(detected_emotion, music_features, duration)
+                
+                for prompt_data in image_prompts:
+                    image_result = call_stable_diffusion_api(
+                        prompt_data['prompt'], 
+                        enable_real_api and STABLE_DIFFUSION_ENABLED
+                    )
+                    if image_result.get('success'):
+                        image_gallery.append(image_result.get('image_url'))
+                        
+                print(f"✅ 生成了{len(image_gallery)}张配套图片")
+            except Exception as img_error:
+                print(f"⚠️ 本地图片生成失败: {img_error}")
+        
+        return report, audio_file, image_gallery, f"成功生成{detected_emotion}疗愈音频 - {audio_source}"
         
     except Exception as e:
         import traceback
         error_msg = f"❌ 生成失败: {str(e)}"
         print(error_msg)
         traceback.print_exc()
-        return error_msg, None, "生成失败"
+        return error_msg, None, [], "生成失败"
 
 def load_previous_suno_music():
     """加载之前成功生成的Suno音乐"""
@@ -1071,9 +1112,9 @@ def load_previous_suno_music():
 ✨ 这是真实的Suno AI生成音乐，展示了AI音乐疗愈的实际效果！
 🌟 任务ID: fdd1b90b-47e2-44ca-a3b9-8b7ff83554dc"""
         
-        return report, audio_file_path, "✅ 成功加载之前的Suno音乐"
+        return report, audio_file_path, [], "✅ 成功加载之前的Suno音乐"
     else:
-        return "❌ 未找到之前的音乐文件", None, "❌ 文件不存在"
+        return "❌ 未找到之前的音乐文件", None, [], "❌ 文件不存在"
 
 def create_therapy_interface():
     """创建疗愈界面"""
@@ -1263,6 +1304,16 @@ def create_therapy_interface():
                     interactive=True
                 )
                 
+                # 图片展示组件
+                image_output = gr.Gallery(
+                    label="🖼️ 配套疗愈图片序列",
+                    columns=2,
+                    rows=2,
+                    height="auto",
+                    show_label=True,
+                    elem_id="therapy-images"
+                )
+                
                 # 状态显示
                 status_output = gr.Textbox(
                     label="🔄 处理状态",
@@ -1321,13 +1372,13 @@ def create_therapy_interface():
         generate_btn.click(
             process_therapy_request,
             inputs=[emotion_input, duration_slider, use_suno, enable_real_api, existing_task_input, enable_image_generation],
-            outputs=[info_output, audio_output, status_output]
+            outputs=[info_output, audio_output, image_output, status_output]
         )
         
         load_previous_btn.click(
             load_previous_suno_music,
             inputs=[],
-            outputs=[info_output, audio_output, status_output]
+            outputs=[info_output, audio_output, image_output, status_output]
         )
     
     return app
