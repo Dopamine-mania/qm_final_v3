@@ -280,6 +280,14 @@ def fetch_suno_result(task_id, max_wait_time=60):
                         task_data = result.get('data')
                         if isinstance(task_data, dict):
                             status = task_data.get('status')
+                            
+                            # 🔥 关键修复：检查是否已有可用音频，不用等SUCCESS
+                            if 'data' in task_data and isinstance(task_data['data'], list) and len(task_data['data']) > 0:
+                                for audio_item in task_data['data']:
+                                    if audio_item.get('audio_url'):
+                                        print(f"🎵 发现可用音频！status={status}, 立即返回")
+                                        return result
+                            
                             if status == 'SUCCESS':
                                 print(f"✅ 音乐生成完成！")
                                 return result
